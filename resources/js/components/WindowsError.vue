@@ -2,23 +2,22 @@
     <div class="error-chaos">
         <div
             v-for="(error, index) in errors"
-            :key="index"
+            :key="error.id"
             class="windows-error"
             :style="error.style"
         >
             <div class="error-titlebar">
                 <span class="error-icon">⚠️</span>
                 <span class="error-title">{{ error.title }}</span>
-                <button class="error-close" @click="addMoreErrors">✕</button>
+                <button class="error-close" @click="onClickButton(error.id)">✕</button>
             </div>
             <div class="error-content">
                 <div class="error-icon-big">❌</div>
                 <div class="error-message">{{ error.message }}</div>
             </div>
             <div class="error-buttons">
-                <button @click="addMoreErrors">OK</button>
-                <button @click="addMoreErrors">Annuler</button>
-                <button @click="addMoreErrors">Réessayer</button>
+                <button @click="onClickButton(error.id)">OK</button>
+                <button @click="onClickButton(error.id)">Annuler</button>
             </div>
         </div>
 
@@ -45,6 +44,9 @@ const emit = defineEmits(['chaos-complete']);
 const errors = ref([]);
 const showBSOD = ref(false);
 const bsodPercent = ref(0);
+const clickCount = ref(0);
+const errorIdCounter = ref(0);
+const isExploding = ref(false);
 
 const errorMessages = [
     { title: 'Erreur Critique', message: 'Votre portefeuille a été vidé avec succès.' },
@@ -61,40 +63,77 @@ const errorMessages = [
     { title: 'Crash Report', message: 'Cause: Excès de confiance en soi.' },
 ];
 
-const addMoreErrors = () => {
-    for (let i = 0; i < 3; i++) {
-        setTimeout(() => addError(), i * 100);
-    }
+const getRandomError = () => {
+    return errorMessages[Math.floor(Math.random() * errorMessages.length)];
 };
 
+const getRandomPosition = () => ({
+    left: Math.random() * 70 + 5 + '%',
+    top: Math.random() * 60 + 5 + '%',
+    transform: `rotate(${Math.random() * 10 - 5}deg)`,
+});
+
 const addError = () => {
-    const randomError = errorMessages[Math.floor(Math.random() * errorMessages.length)];
+    const randomError = getRandomError();
+    errorIdCounter.value++;
     errors.value.push({
+        id: errorIdCounter.value,
         ...randomError,
         style: {
-            left: Math.random() * 60 + 10 + '%',
-            top: Math.random() * 60 + 10 + '%',
-            transform: `rotate(${Math.random() * 20 - 10}deg)`,
+            ...getRandomPosition(),
             zIndex: errors.value.length + 10,
         }
     });
 };
 
-onMounted(() => {
-    // Spawn errors progressively
-    let errorCount = 0;
-    const errorInterval = setInterval(() => {
-        addError();
-        errorCount++;
-        if (errorCount >= 15) {
-            clearInterval(errorInterval);
+const onClickButton = (errorId) => {
+    if (isExploding.value) return;
+
+    // Supprimer l'erreur cliquée
+    errors.value = errors.value.filter(e => e.id !== errorId);
+    clickCount.value++;
+
+    // Multiplication exponentielle
+    let newErrorCount = 0;
+
+    if (clickCount.value === 1) {
+        newErrorCount = 2;
+    } else if (clickCount.value === 2) {
+        newErrorCount = 4;
+    } else if (clickCount.value === 3) {
+        newErrorCount = 8;
+    } else {
+        // EXPLOSION TOTALE
+        isExploding.value = true;
+        explode();
+        return;
+    }
+
+    // Ajouter les nouvelles erreurs avec délai
+    for (let i = 0; i < newErrorCount; i++) {
+        setTimeout(() => addError(), i * 100);
+    }
+};
+
+const explode = () => {
+    // Spawn massif d'erreurs
+    let spawned = 0;
+    const explosionInterval = setInterval(() => {
+        for (let i = 0; i < 5; i++) {
+            addError();
+        }
+        spawned += 5;
+
+        if (spawned >= 50) {
+            clearInterval(explosionInterval);
+            // Lancer le BSOD après un court délai
             setTimeout(() => {
                 showBSOD.value = true;
                 startBSOD();
-            }, 1000);
+            }, 1500);
         }
-    }, 200);
-});
+    }, 100);
+};
 
 const startBSOD = () => {
     const bsodInterval = setInterval(() => {
@@ -108,6 +147,11 @@ const startBSOD = () => {
         }
     }, 400);
 };
+
+onMounted(() => {
+    // Première erreur au démarrage
+    addError();
+});
 </script>
 
 <style scoped>
@@ -129,7 +173,7 @@ const startBSOD = () => {
     border-radius: 8px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     font-family: 'Segoe UI', Tahoma, sans-serif;
-    animation: popIn 0.2s ease-out;
+    animation: popIn 0.15s ease-out;
 }
 
 @keyframes popIn {
