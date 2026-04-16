@@ -331,8 +331,10 @@ const scratchBox = (e, index) => {
     if (!canvas || !ctx) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = ((e.touches ? e.touches[0].clientX : e.clientX) - rect.left) * scaleX;
+    const y = ((e.touches ? e.touches[0].clientY : e.clientY) - rect.top) * scaleY;
 
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
@@ -356,8 +358,10 @@ const scratchBonus = (e) => {
     if (!canvas || !ctx) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = ((e.touches ? e.touches[0].clientX : e.clientX) - rect.left) * scaleX;
+    const y = ((e.touches ? e.touches[0].clientY : e.clientY) - rect.top) * scaleY;
 
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
