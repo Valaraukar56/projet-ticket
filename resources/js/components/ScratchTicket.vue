@@ -3,48 +3,48 @@
         <div class="scratch-modal">
             <button class="close-btn" @click="$emit('close')">X</button>
 
-            <h2>{{ ticket.name }} - Risque {{ ticket.lossPercentage }}%</h2>
+            <h2>{{ ticket.name }} - Prix: {{ ticket.price }}$</h2>
 
-            <div class="scratch-area" ref="scratchArea">
-                <canvas
-                    ref="canvas"
-                    @mousedown="startScratching"
-                    @mousemove="scratch"
-                    @mouseup="stopScratching"
-                    @mouseleave="stopScratching"
-                    @touchstart.prevent="startScratching"
-                    @touchmove.prevent="scratchTouch"
-                    @touchend="stopScratching"
-                ></canvas>
-
-                <div class="result-layer" :class="resultClass">
-                    <div class="icons-container">
-                        <div
-                            v-for="(icon, index) in resultIcons"
-                            :key="index"
-                            class="icon-slot"
-                            :class="{ 'matching': isMatching(index) }"
-                        >
-                            <span class="icon">{{ icon.emoji }}</span>
-                            <span class="icon-name">{{ icon.name }}</span>
-                        </div>
-                    </div>
-
-                    <div v-if="revealed" class="result-message">
-                        <template v-if="jackpot">
-                            <span class="jackpot-text">JACKPOT!</span>
-                            <span class="result-amount">+{{ ticket.jackpotGain }}$</span>
-                        </template>
-                        <template v-else-if="won">
-                            <span class="win-text">GAGNE!</span>
-                            <span class="result-amount">+{{ ticket.baseGain }}$</span>
-                        </template>
-                        <template v-else>
-                            <span class="lose-text">PERDU</span>
-                            <span class="result-amount">-{{ ticket.price }}$</span>
-                        </template>
+            <div class="scratch-zones">
+                <div
+                    v-for="(icon, index) in resultIcons"
+                    :key="index"
+                    class="scratch-zone"
+                    :class="{
+                        'revealed': revealedIcons[index],
+                        'matching': revealedIcons[index] && isMatching(index)
+                    }"
+                >
+                    <canvas
+                        :ref="el => canvasRefs[index] = el"
+                        @mousedown="(e) => startScratching(e, index)"
+                        @mousemove="(e) => scratch(e, index)"
+                        @mouseup="stopScratching"
+                        @mouseleave="stopScratching"
+                        @touchstart.prevent="(e) => startScratching(e, index)"
+                        @touchmove.prevent="(e) => scratch(e, index)"
+                        @touchend="stopScratching"
+                    ></canvas>
+                    <div class="icon-content">
+                        <span class="icon">{{ icon.emoji }}</span>
+                        <span class="icon-name">{{ icon.name }}</span>
                     </div>
                 </div>
+            </div>
+
+            <div v-if="allRevealed" class="result-message" :class="resultClass">
+                <template v-if="jackpot">
+                    <span class="jackpot-text">JACKPOT!</span>
+                    <span class="result-amount">+{{ ticket.jackpotGain }}$</span>
+                </template>
+                <template v-else-if="won">
+                    <span class="win-text">GAGNE!</span>
+                    <span class="result-amount">+{{ ticket.baseGain }}$</span>
+                </template>
+                <template v-else>
+                    <span class="lose-text">PERDU</span>
+                    <span class="result-amount">-{{ ticket.price }}$</span>
+                </template>
             </div>
 
             <div class="legend">
@@ -52,16 +52,15 @@
                 <span>3 identiques = JACKPOT {{ ticket.jackpotGain }}$</span>
             </div>
 
-            <div class="progress-bar">
-                <div class="progress" :style="{ width: scratchPercentage + '%' }"></div>
+            <div class="progress-info">
+                <span>{{ revealedCount }}/3 icônes révélées</span>
             </div>
-            <p class="progress-text">{{ Math.round(scratchPercentage) }}% gratté (75% pour révéler)</p>
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, reactive } from 'vue';
 
 const props = defineProps({
     ticket: {
@@ -72,15 +71,16 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'result']);
 
-const canvas = ref(null);
-const scratchArea = ref(null);
-const ctx = ref(null);
+const canvasRefs = ref([]);
+const ctxRefs = ref([]);
 const isScratching = ref(false);
-const scratchPercentage = ref(0);
-const revealed = ref(false);
+const currentZone = ref(-1);
+const scratchPercentages = reactive([0, 0, 0]);
+const revealedIcons = reactive([false, false, false]);
 const resultIcons = ref([]);
 const won = ref(false);
 const jackpot = ref(false);
+const resultEmitted = ref(false);
 
 const icons = [
     { emoji: '💎', name: 'Diamant' },
@@ -93,15 +93,16 @@ const icons = [
     { emoji: '🔔', name: 'Cloche' },
 ];
 
+const revealedCount = computed(() => revealedIcons.filter(r => r).length);
+const allRevealed = computed(() => revealedIcons.every(r => r));
+
 const resultClass = computed(() => {
-    if (!revealed.value) return '';
-    if (jackpot.value) return 'jackpot-bg';
-    if (won.value) return 'win-bg';
-    return 'lose-bg';
+    if (jackpot.value) return 'jackpot';
+    if (won.value) return 'win';
+    return 'lose';
 });
 
 const isMatching = (index) => {
-    if (!revealed.value) return false;
     const currentIcon = resultIcons.value[index].emoji;
     const matchCount = resultIcons.value.filter(i => i.emoji === currentIcon).length;
     return matchCount >= 2;
@@ -112,26 +113,21 @@ const generateResult = () => {
     const isWin = random > props.ticket.lossPercentage;
 
     if (isWin) {
-        // Gagné : on génère 2 ou 3 icônes identiques
-        const isJackpot = Math.random() < 0.3; // 30% chance de jackpot si gagné
+        const isJackpot = Math.random() < 0.3;
         const winningIcon = icons[Math.floor(Math.random() * icons.length)];
 
         if (isJackpot) {
-            // Jackpot : 3 icônes identiques
             resultIcons.value = [winningIcon, winningIcon, winningIcon];
             jackpot.value = true;
             won.value = true;
         } else {
-            // Gain normal : 2 icônes identiques
             const otherIcon = icons.filter(i => i.emoji !== winningIcon.emoji)[Math.floor(Math.random() * (icons.length - 1))];
             const positions = [winningIcon, winningIcon, otherIcon];
-            // Mélanger
             resultIcons.value = positions.sort(() => Math.random() - 0.5);
             won.value = true;
             jackpot.value = false;
         }
     } else {
-        // Perdu : 3 icônes différentes
         const shuffled = [...icons].sort(() => Math.random() - 0.5);
         resultIcons.value = shuffled.slice(0, 3);
         won.value = false;
@@ -139,39 +135,47 @@ const generateResult = () => {
     }
 };
 
-onMounted(() => {
-    const canvasEl = canvas.value;
-    const area = scratchArea.value;
+const initCanvas = (index) => {
+    const canvas = canvasRefs.value[index];
+    if (!canvas) return;
 
-    canvasEl.width = area.offsetWidth;
-    canvasEl.height = area.offsetHeight;
+    canvas.width = 100;
+    canvas.height = 100;
 
-    ctx.value = canvasEl.getContext('2d');
+    const ctx = canvas.getContext('2d');
+    ctxRefs.value[index] = ctx;
 
-    // Fond gris avec texture
-    ctx.value.fillStyle = '#888';
-    ctx.value.fillRect(0, 0, canvasEl.width, canvasEl.height);
+    // Fond gris
+    ctx.fillStyle = '#888';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Texture grattable
-    ctx.value.fillStyle = '#999';
-    for (let i = 0; i < 200; i++) {
-        const x = Math.random() * canvasEl.width;
-        const y = Math.random() * canvasEl.height;
-        ctx.value.fillRect(x, y, 2, 2);
+    // Texture
+    ctx.fillStyle = '#999';
+    for (let i = 0; i < 30; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        ctx.fillRect(x, y, 2, 2);
     }
 
-    // Texte "Grattez ici"
-    ctx.value.fillStyle = '#666';
-    ctx.value.font = 'bold 24px Arial';
-    ctx.value.textAlign = 'center';
-    ctx.value.fillText('GRATTEZ ICI', canvasEl.width / 2, canvasEl.height / 2);
+    // Point d'interrogation
+    ctx.fillStyle = '#666';
+    ctx.font = 'bold 40px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('?', canvas.width / 2, canvas.height / 2);
+};
 
-    // Générer le résultat
+onMounted(() => {
     generateResult();
+    setTimeout(() => {
+        for (let i = 0; i < 3; i++) {
+            initCanvas(i);
+        }
+    }, 50);
 });
 
-const getPosition = (e) => {
-    const rect = canvas.value.getBoundingClientRect();
+const getPosition = (e, canvas) => {
+    const rect = canvas.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     return {
@@ -180,44 +184,43 @@ const getPosition = (e) => {
     };
 };
 
-const startScratching = (e) => {
+const startScratching = (e, index) => {
+    if (revealedIcons[index]) return;
     isScratching.value = true;
-    const pos = getPosition(e);
-    ctx.value.globalCompositeOperation = 'destination-out';
-    ctx.value.beginPath();
-    ctx.value.arc(pos.x, pos.y, 30, 0, Math.PI * 2);
-    ctx.value.fill();
-    updatePercentage();
+    currentZone.value = index;
+    scratchAt(e, index);
 };
 
-const scratch = (e) => {
-    if (!isScratching.value || revealed.value) return;
-
-    const pos = getPosition(e);
-    ctx.value.globalCompositeOperation = 'destination-out';
-    ctx.value.beginPath();
-    ctx.value.arc(pos.x, pos.y, 30, 0, Math.PI * 2);
-    ctx.value.fill();
-    updatePercentage();
+const scratch = (e, index) => {
+    if (!isScratching.value || currentZone.value !== index || revealedIcons[index]) return;
+    scratchAt(e, index);
 };
 
-const scratchTouch = (e) => {
-    if (!isScratching.value || revealed.value) return;
+const scratchAt = (e, index) => {
+    const canvas = canvasRefs.value[index];
+    const ctx = ctxRefs.value[index];
+    if (!canvas || !ctx) return;
 
-    const pos = getPosition(e);
-    ctx.value.globalCompositeOperation = 'destination-out';
-    ctx.value.beginPath();
-    ctx.value.arc(pos.x, pos.y, 30, 0, Math.PI * 2);
-    ctx.value.fill();
-    updatePercentage();
+    const pos = getPosition(e, canvas);
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 20, 0, Math.PI * 2);
+    ctx.fill();
+
+    updatePercentage(index);
 };
 
 const stopScratching = () => {
     isScratching.value = false;
+    currentZone.value = -1;
 };
 
-const updatePercentage = () => {
-    const imageData = ctx.value.getImageData(0, 0, canvas.value.width, canvas.value.height);
+const updatePercentage = (index) => {
+    const canvas = canvasRefs.value[index];
+    const ctx = ctxRefs.value[index];
+    if (!canvas || !ctx) return;
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const pixels = imageData.data;
     let transparent = 0;
 
@@ -226,25 +229,27 @@ const updatePercentage = () => {
     }
 
     const total = pixels.length / 4;
-    scratchPercentage.value = (transparent / total) * 100;
+    scratchPercentages[index] = (transparent / total) * 100;
 
-    if (scratchPercentage.value >= 75 && !revealed.value) {
-        revealed.value = true;
+    // Révéler si plus de 60% gratté
+    if (scratchPercentages[index] >= 60 && !revealedIcons[index]) {
+        revealedIcons[index] = true;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        const winAmount = jackpot.value
-            ? props.ticket.jackpotGain
-            : (won.value ? props.ticket.baseGain : 0);
+        // Vérifier si toutes les icônes sont révélées
+        if (allRevealed.value && !resultEmitted.value) {
+            resultEmitted.value = true;
+            const winAmount = jackpot.value
+                ? props.ticket.jackpotGain
+                : (won.value ? props.ticket.baseGain : 0);
 
-        emit('result', {
-            won: won.value,
-            jackpot: jackpot.value,
-            amount: winAmount,
-            icons: resultIcons.value,
-        });
-
-        // Clear remaining scratch layer
-        ctx.value.clearRect(0, 0, canvas.value.width, canvas.value.height);
-        scratchPercentage.value = 100;
+            emit('result', {
+                won: won.value,
+                jackpot: jackpot.value,
+                amount: winAmount,
+                icons: resultIcons.value,
+            });
+        }
     }
 };
 </script>
@@ -270,6 +275,7 @@ const updatePercentage = () => {
     text-align: center;
     position: relative;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    min-width: 420px;
 }
 
 .close-btn {
@@ -289,28 +295,36 @@ const updatePercentage = () => {
 
 h2 {
     color: #ffd700;
+    margin-bottom: 25px;
+}
+
+.scratch-zones {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
     margin-bottom: 20px;
 }
 
-.scratch-area {
-    width: 400px;
-    height: 220px;
+.scratch-zone {
+    width: 100px;
+    height: 100px;
     position: relative;
     border-radius: 15px;
     overflow: hidden;
-    margin: 0 auto;
-    border: 4px solid #ffd700;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s;
 }
 
-canvas {
+.scratch-zone canvas {
     position: absolute;
     top: 0;
     left: 0;
     cursor: crosshair;
     z-index: 2;
+    border-radius: 12px;
 }
 
-.result-layer {
+.scratch-zone .icon-content {
     width: 100%;
     height: 100%;
     display: flex;
@@ -318,99 +332,93 @@ canvas {
     justify-content: center;
     align-items: center;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    transition: background 0.5s;
-    padding: 20px;
 }
 
-.result-layer.win-bg {
-    background: linear-gradient(135deg, #2d5a2d 0%, #1e3f1e 100%);
+.scratch-zone.revealed {
+    border-color: rgba(255, 255, 255, 0.5);
 }
 
-.result-layer.lose-bg {
-    background: linear-gradient(135deg, #5a2d2d 0%, #3f1e1e 100%);
-}
-
-.result-layer.jackpot-bg {
-    background: linear-gradient(135deg, #5a4d2d 0%, #3f351e 100%);
-    animation: jackpotPulse 0.5s infinite alternate;
-}
-
-@keyframes jackpotPulse {
-    from { box-shadow: inset 0 0 30px rgba(255, 215, 0, 0.3); }
-    to { box-shadow: inset 0 0 50px rgba(255, 215, 0, 0.6); }
-}
-
-.icons-container {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 15px;
-}
-
-.icon-slot {
-    width: 90px;
-    height: 90px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 15px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    border: 3px solid rgba(255, 255, 255, 0.2);
-    transition: all 0.3s;
-}
-
-.icon-slot.matching {
+.scratch-zone.revealed.matching {
     border-color: #ffd700;
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-    background: rgba(255, 215, 0, 0.2);
+    animation: glow 1s infinite alternate;
+}
+
+@keyframes glow {
+    from { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+    to { box-shadow: 0 0 30px rgba(255, 215, 0, 0.8); }
 }
 
 .icon {
-    font-size: 40px;
+    font-size: 36px;
 }
 
 .icon-name {
-    font-size: 12px;
+    font-size: 11px;
     color: #888;
     margin-top: 5px;
 }
 
 .result-message {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
+    padding: 15px 30px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+    animation: popIn 0.3s ease-out;
+}
+
+@keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.result-message.jackpot {
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+}
+
+.result-message.win {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+}
+
+.result-message.lose {
+    background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
 }
 
 .jackpot-text {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: bold;
-    color: #ffd700;
-    text-shadow: 0 0 20px #ffd700;
-    animation: jackpotText 0.3s infinite alternate;
+    color: #1a1a2e;
+    display: block;
+    animation: shake 0.5s infinite;
 }
 
-@keyframes jackpotText {
-    from { transform: scale(1); }
-    to { transform: scale(1.1); }
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
 }
 
 .win-text {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: bold;
-    color: #4ade80;
-    text-shadow: 0 0 10px #4ade80;
+    color: #1a1a2e;
+    display: block;
 }
 
 .lose-text {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: bold;
-    color: #f87171;
+    color: white;
+    display: block;
 }
 
 .result-amount {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: bold;
+    color: #1a1a2e;
+    display: block;
+}
+
+.result-message.lose .result-amount {
     color: white;
 }
 
@@ -423,23 +431,9 @@ canvas {
     font-size: 13px;
 }
 
-.progress-bar {
-    width: 400px;
-    height: 15px;
-    background: #333;
-    border-radius: 10px;
-    margin: 15px auto 10px;
-    overflow: hidden;
-}
-
-.progress {
-    height: 100%;
-    background: linear-gradient(90deg, #ffd700 0%, #ffaa00 100%);
-    transition: width 0.1s;
-}
-
-.progress-text {
-    color: #888;
+.progress-info {
+    margin-top: 10px;
+    color: #ffd700;
     font-size: 14px;
 }
 </style>

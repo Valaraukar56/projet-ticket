@@ -46,6 +46,7 @@
                         </div>
                         <div class="ticket-info">
                             <span class="ticket-name">{{ ticket.name }}</span>
+                            <span class="ticket-price">Prix: {{ ticket.price }}$</span>
                             <span class="ticket-gain-base">2 icônes: {{ ticket.baseGain }}$</span>
                             <span class="ticket-gain-jackpot">3 icônes: {{ ticket.jackpotGain }}$</span>
                         </div>
@@ -333,6 +334,12 @@ const selectTicket = (ticket) => {
 
 .ticket-name {
     font-size: 18px;
+    font-weight: bold;
+}
+
+.ticket-price {
+    color: #ff6b6b;
+    font-size: 14px;
     font-weight: bold;
 }
 
