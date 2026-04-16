@@ -13,6 +13,12 @@
             @close="closeTicket"
             @result="handleResult"
         />
+
+        <!-- Chaos Windows si YOLO perdu -->
+        <WindowsError
+            v-if="showChaos"
+            @chaos-complete="handleChaosComplete"
+        />
     </div>
 </template>
 
@@ -21,10 +27,12 @@ import { ref } from 'vue';
 import WelcomeDoor from './components/WelcomeDoor.vue';
 import Lobby from './components/Lobby.vue';
 import ScratchTicket from './components/ScratchTicket.vue';
+import WindowsError from './components/WindowsError.vue';
 
 const doorOpened = ref(false);
 const balance = ref(100);
 const currentTicket = ref(null);
+const showChaos = ref(false);
 
 const openDoor = () => {
     doorOpened.value = true;
@@ -49,11 +57,30 @@ const handleResult = (result) => {
     if (result.won) {
         balance.value += result.amount;
     }
+
+    // Si YOLO perdu = CHAOS
+    if (currentTicket.value?.cursed && !result.won) {
+        setTimeout(() => {
+            currentTicket.value = null;
+            showChaos.value = true;
+        }, 1500);
+        return;
+    }
+
     // Plus de temps pour admirer le jackpot
     const delay = result.jackpot ? 3500 : 2000;
     setTimeout(() => {
         currentTicket.value = null;
     }, delay);
+};
+
+const handleChaosComplete = () => {
+    // Fermer la page / recharger
+    window.close();
+    // Si window.close ne marche pas (souvent bloqué par les navigateurs)
+    setTimeout(() => {
+        location.href = 'about:blank';
+    }, 100);
 };
 </script>
 
