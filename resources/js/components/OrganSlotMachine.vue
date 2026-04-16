@@ -1,5 +1,44 @@
 <template>
     <div class="organ-overlay">
+        <!-- Décor de la salle cartoon sombre -->
+        <div class="scene">
+            <div class="wall"></div>
+            <div class="floor"></div>
+
+            <div class="lamp"></div>
+            <div class="light-cone"></div>
+
+            <div class="sign"><span>ZONE 04</span></div>
+
+            <div class="shelf left">
+                <div class="line one"></div>
+                <div class="line two"></div>
+                <div class="jar"></div>
+                <div class="jar"></div>
+                <div class="jar"></div>
+                <div class="jar"></div>
+                <div class="jar"></div>
+                <div class="jar"></div>
+            </div>
+
+            <div class="shelf right">
+                <div class="line one"></div>
+                <div class="line two"></div>
+                <div class="jar"></div>
+                <div class="jar"></div>
+                <div class="jar"></div>
+                <div class="jar"></div>
+                <div class="jar"></div>
+                <div class="jar"></div>
+            </div>
+
+            <div class="table-shadow"></div>
+            <div class="table"></div>
+
+            <div class="fog"></div>
+            <div class="noise"></div>
+        </div>
+
         <!-- Machine à sous centrale -->
         <div class="organ-machine">
             <div class="machine-title">
@@ -342,8 +381,65 @@ const checkResult = (results) => {
     }
 };
 
+// Générer les taches et fissures du décor
+const populateScene = () => {
+    const scene = document.querySelector('.scene');
+    if (!scene) return;
+
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+
+    // Taches murales sales
+    for (let i = 0; i < 18; i++) {
+        const el = document.createElement('div');
+        el.className = 'stain grime';
+        el.style.left = Math.random() * W + 'px';
+        el.style.top = Math.random() * (H * 0.62) + 'px';
+        el.style.width = (40 + Math.random() * 120) + 'px';
+        el.style.height = (20 + Math.random() * 60) + 'px';
+        el.style.transform = `rotate(${-40 + Math.random() * 80}deg)`;
+        scene.appendChild(el);
+    }
+
+    // Taches rouges stylisées
+    for (let i = 0; i < 10; i++) {
+        const el = document.createElement('div');
+        el.className = 'stain red';
+        el.style.left = Math.random() * W + 'px';
+        el.style.top = (90 + Math.random() * (H * 0.5)) + 'px';
+        el.style.width = (20 + Math.random() * 70) + 'px';
+        el.style.height = (10 + Math.random() * 35) + 'px';
+        el.style.transform = `rotate(${-50 + Math.random() * 100}deg)`;
+        scene.appendChild(el);
+    }
+
+    // Fissures
+    for (let i = 0; i < 7; i++) {
+        const el = document.createElement('div');
+        el.className = 'crack';
+        el.style.left = (50 + Math.random() * (W - 100)) + 'px';
+        el.style.top = (40 + Math.random() * (H * 0.45)) + 'px';
+        el.style.height = (45 + Math.random() * 110) + 'px';
+        el.style.transform = `rotate(${-25 + Math.random() * 50}deg)`;
+        scene.appendChild(el);
+    }
+
+    // Marques au sol
+    for (let i = 0; i < 8; i++) {
+        const el = document.createElement('div');
+        el.className = 'floor-mark';
+        el.style.left = (80 + Math.random() * (W - 160)) + 'px';
+        el.style.bottom = (40 + Math.random() * 70) + 'px';
+        el.style.width = (40 + Math.random() * 110) + 'px';
+        el.style.height = (12 + Math.random() * 28) + 'px';
+        el.style.transform = `rotate(${-25 + Math.random() * 50}deg)`;
+        scene.appendChild(el);
+    }
+};
+
 onMounted(() => {
     generateReelSymbols();
+    populateScene();
 });
 </script>
 
@@ -351,39 +447,338 @@ onMounted(() => {
 .organ-overlay {
     position: fixed;
     inset: 0;
-    background: linear-gradient(135deg, #0a0000 0%, #1a0505 50%, #0a0000 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 80px;
+    gap: 60px;
     z-index: 500;
     overflow: hidden;
     padding: 40px;
 }
 
+/* ========== DÉCOR SALLE CARTOON ========== */
+.scene {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 50% 20%, rgba(120, 50, 50, 0.1), transparent 30%),
+        linear-gradient(to bottom, #3a2020 0%, #2a1515 45%, #1a0a0a 100%);
+}
+
+.wall {
+    position: absolute;
+    inset: 0 0 28% 0;
+    background:
+        linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(0,0,0,0.15)),
+        repeating-linear-gradient(
+            to right,
+            rgba(0,0,0,0.08) 0 4px,
+            rgba(255,255,255,0.01) 4px 70px
+        ),
+        linear-gradient(to bottom, #4a2828, #352020);
+    border-bottom: 8px solid #1a0808;
+}
+
+.floor {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 28%;
+    background:
+        repeating-linear-gradient(
+            to right,
+            #3a2218 0 40px,
+            #4a3028 40px 42px
+        );
+    box-shadow: inset 0 25px 35px rgba(0,0,0,0.5);
+}
+
+.lamp {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 12px;
+    height: 100px;
+    background: #1a1a1a;
+    z-index: 20;
+}
+
+.lamp::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -18px;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 30px;
+    background: #8a7070;
+    border: 5px solid #1e1f22;
+    border-radius: 50% 50% 45% 45%;
+    box-shadow:
+        0 0 18px rgba(180,100,100,0.2),
+        inset 0 -10px 12px rgba(0,0,0,0.2);
+}
+
+.light-cone {
+    position: absolute;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50vw;
+    height: 55vh;
+    background: radial-gradient(
+        ellipse at top,
+        rgba(180, 120, 120, 0.15) 0%,
+        rgba(140, 80, 80, 0.08) 30%,
+        rgba(100, 50, 50, 0.03) 55%,
+        transparent 75%
+    );
+    filter: blur(6px);
+    pointer-events: none;
+    z-index: 5;
+}
+
+.table {
+    position: absolute;
+    left: 50%;
+    bottom: 17%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 80px;
+    background: #5a4545;
+    border: 5px solid #1f1515;
+    border-radius: 10px;
+    z-index: 12;
+    box-shadow:
+        0 8px 0 #2d1818,
+        0 22px 25px rgba(0,0,0,0.5);
+}
+
+.table::before,
+.table::after {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 100px;
+    background: #3a2828;
+    bottom: -95px;
+    border: 4px solid #1f1515;
+}
+
+.table::before { left: 30px; }
+.table::after  { right: 30px; }
+
+.table-shadow {
+    position: absolute;
+    left: 50%;
+    bottom: 11.5%;
+    transform: translateX(-50%);
+    width: 380px;
+    height: 45px;
+    background: radial-gradient(ellipse, rgba(0,0,0,0.5), transparent 70%);
+    z-index: 3;
+}
+
+.shelf {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    background: #3a2218;
+    border: 5px solid #1a0a08;
+    border-radius: 10px;
+    z-index: 10;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+
+.shelf.left {
+    left: 5%;
+    bottom: 26%;
+}
+
+.shelf.right {
+    right: 5%;
+    bottom: 26%;
+}
+
+.shelf .line {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: #1a0a08;
+}
+
+.shelf .line.one { top: 58px; }
+.shelf .line.two { top: 116px; }
+
+.jar {
+    position: absolute;
+    width: 32px;
+    height: 44px;
+    background: rgba(180, 200, 200, 0.15);
+    border: 3px solid #1d2427;
+    border-radius: 8px 8px 6px 6px;
+    box-shadow: inset 0 -10px 0 rgba(100, 50, 50, 0.2);
+}
+
+.jar::before {
+    content: "";
+    position: absolute;
+    top: -8px;
+    left: 4px;
+    width: 18px;
+    height: 8px;
+    background: #4a4044;
+    border: 2px solid #1d2427;
+    border-radius: 3px;
+}
+
+.jar::after {
+    content: "";
+    position: absolute;
+    left: 7px;
+    top: 14px;
+    width: 14px;
+    height: 16px;
+    background: rgba(150, 40, 40, 0.5);
+    border-radius: 40% 55% 35% 50%;
+    transform: rotate(18deg);
+}
+
+.left .jar:nth-child(4)  { left: 15px; top: 10px; }
+.left .jar:nth-child(5)  { left: 70px; top: 10px; }
+.left .jar:nth-child(6)  { left: 125px; top: 10px; }
+.left .jar:nth-child(7)  { left: 25px; top: 68px; }
+.left .jar:nth-child(8)  { left: 90px; top: 68px; }
+.left .jar:nth-child(9)  { left: 55px; top: 126px; }
+
+.right .jar:nth-child(4) { left: 20px; top: 10px; }
+.right .jar:nth-child(5) { left: 75px; top: 10px; }
+.right .jar:nth-child(6) { left: 130px; top: 10px; }
+.right .jar:nth-child(7) { left: 40px; top: 68px; }
+.right .jar:nth-child(8) { left: 110px; top: 68px; }
+.right .jar:nth-child(9) { left: 75px; top: 126px; }
+
+.stain {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(0.8px);
+    opacity: 0.9;
+    z-index: 6;
+    pointer-events: none;
+}
+
+.grime {
+    background: rgba(40, 25, 20, 0.3);
+}
+
+.red {
+    background: rgba(120, 8, 12, 0.75);
+}
+
+.crack {
+    position: absolute;
+    width: 3px;
+    height: 80px;
+    background: linear-gradient(to bottom, #0a0505, #2a1515, transparent);
+    opacity: 0.6;
+    z-index: 7;
+    pointer-events: none;
+}
+
+.sign {
+    position: absolute;
+    top: 70px;
+    left: 50px;
+    width: 160px;
+    height: 55px;
+    border: 5px solid #1b1b1d;
+    border-radius: 8px;
+    background: #4a3535;
+    z-index: 11;
+    box-shadow: 0 5px 18px rgba(0,0,0,0.4);
+}
+
+.sign span {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aa6666;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-shadow: 0 0 8px rgba(180,80,80,0.3);
+}
+
+.floor-mark {
+    position: absolute;
+    background: rgba(100, 10, 12, 0.6);
+    border-radius: 50%;
+    filter: blur(1px);
+    z-index: 9;
+    pointer-events: none;
+}
+
+.fog {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 25% 60%, rgba(100,50,50,0.04), transparent 20%),
+        radial-gradient(circle at 70% 40%, rgba(100,50,50,0.05), transparent 26%),
+        radial-gradient(circle at 55% 75%, rgba(100,50,50,0.03), transparent 22%);
+    animation: drift 9s ease-in-out infinite alternate;
+    z-index: 15;
+}
+
+@keyframes drift {
+    from { transform: translateX(-8px) translateY(0px); }
+    to   { transform: translateX(8px) translateY(-5px); }
+}
+
+.noise {
+    position: absolute;
+    inset: 0;
+    opacity: 0.1;
+    pointer-events: none;
+    z-index: 30;
+    background-image:
+        radial-gradient(circle, rgba(255,200,200,0.3) 0.7px, transparent 0.8px);
+    background-size: 9px 9px;
+}
+
+/* ========== FIN DÉCOR ========== */
+
 .blood-overlay {
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at top, rgba(139, 0, 0, 0.3) 0%, transparent 70%);
+    background: radial-gradient(ellipse at top, rgba(139, 0, 0, 0.25) 0%, transparent 70%);
     pointer-events: none;
+    z-index: 50;
 }
 
 .vignette {
     position: absolute;
     inset: 0;
-    box-shadow: inset 0 0 150px rgba(0, 0, 0, 0.9);
+    box-shadow: inset 0 0 180px rgba(0, 0, 0, 0.95);
     pointer-events: none;
+    z-index: 51;
 }
 
 /* Panel d'avertissement */
 .warning-panel {
-    background: rgba(20, 0, 0, 0.9);
+    background: rgba(20, 0, 0, 0.95);
     border: 2px solid #8b0000;
     border-radius: 15px;
     padding: 20px;
     width: 200px;
     flex-shrink: 0;
-    z-index: 10;
+    z-index: 60;
 }
 
 .warning-title {
@@ -465,7 +860,7 @@ onMounted(() => {
     padding: 30px 40px;
     box-shadow: 0 0 50px rgba(139, 0, 0, 0.5), inset 0 0 30px rgba(0, 0, 0, 0.8);
     position: relative;
-    z-index: 10;
+    z-index: 60;
 }
 
 .machine-title {
