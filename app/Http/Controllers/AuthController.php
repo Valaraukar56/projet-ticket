@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\GameLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -33,6 +34,9 @@ class AuthController extends Controller
 
         Auth::login($user);
 
+        // Log dans MongoDB
+        GameLogService::logRegister();
+
         return response()->json([
             'user' => [
                 'id' => $user->id,
@@ -62,6 +66,9 @@ class AuthController extends Controller
 
         $user = Auth::user();
 
+        // Log dans MongoDB
+        GameLogService::logLogin();
+
         return response()->json([
             'user' => [
                 'id' => $user->id,
@@ -78,6 +85,9 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
+        // Log dans MongoDB avant déconnexion
+        GameLogService::logLogout();
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -142,6 +152,10 @@ class AuthController extends Controller
         }
 
         $userName = $user->name;
+        $finalBalance = $user->balance;
+
+        // Log YOLO death dans MongoDB
+        GameLogService::logYoloDeath($userName, $finalBalance);
 
         // Déconnecter l'utilisateur
         Auth::logout();

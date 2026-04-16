@@ -9,15 +9,18 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
-    libzip-dev
+    libzip-dev \
+    nodejs \
+    npm \
+    default-mysql-client
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+# Install PHP extensions for MySQL
+RUN docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
 
-# Install MongoDB extension
+# Install MongoDB PHP extension
 RUN pecl install mongodb && docker-php-ext-enable mongodb
 
 # Enable Apache modules
@@ -37,7 +40,23 @@ RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/Allo
 # Set working directory
 WORKDIR /var/www/html
 
+# Copy project files
+COPY . .
+
+# Install dependencies and build
+RUN composer install --no-dev --optimize-autoloader
+RUN npm install && npm run build
+
 # Set permissions
-RUN chown -R www-data:www-data /var/www/html
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 /var/www/html/storage \
+    && chmod -R 775 /var/www/html/bootstrap/cache
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 80
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["apache2-foreground"]

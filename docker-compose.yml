@@ -1,4 +1,5 @@
 services:
+  # Application PHP/Laravel
   app:
     build:
       context: .
@@ -8,20 +9,38 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./:/var/www/html
+      - storage-data:/var/www/html/storage/app
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - APP_URL=http://localhost:8080
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=ticket_db
+      - DB_USERNAME=ticket_user
+      - DB_PASSWORD=ticket_password
+      - MONGO_HOST=mongodb
+      - MONGO_PORT=27017
+      - MONGO_DATABASE=ticket_logs
+      - MONGO_USERNAME=mongo_user
+      - MONGO_PASSWORD=mongo_password
     networks:
       - ticket-network
     depends_on:
-      - mysql
-      - mongodb
+      mysql:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
 
+  # Base de données MySQL
   mysql:
     image: mysql:8.0
     container_name: ticket-mysql
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: ticket_db
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root_password
       MYSQL_USER: ticket_user
       MYSQL_PASSWORD: ticket_password
     ports:
@@ -30,7 +49,13 @@ services:
       - mysql-data:/var/lib/mysql
     networks:
       - ticket-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
+  # Base de données MongoDB (pour les logs)
   mongodb:
     image: mongo:7
     container_name: ticket-mongodb
@@ -46,18 +71,6 @@ services:
     networks:
       - ticket-network
 
-  node:
-    image: node:20-alpine
-    container_name: ticket-node
-    working_dir: /var/www/html
-    volumes:
-      - ./:/var/www/html
-    command: sh -c "npm install && npm run dev -- --host"
-    ports:
-      - "5173:5173"
-    networks:
-      - ticket-network
-
 networks:
   ticket-network:
     driver: bridge
@@ -65,3 +78,4 @@ networks:
 volumes:
   mysql-data:
   mongodb-data:
+  storage-data:
