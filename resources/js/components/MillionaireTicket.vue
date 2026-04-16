@@ -255,14 +255,14 @@ const initBoxCanvas = (index) => {
     const canvas = boxCanvases.value[index];
     if (!canvas) return;
 
-    canvas.width = 90;
-    canvas.height = 70;
+    canvas.width = 75;
+    canvas.height = 55;
 
     const ctx = canvas.getContext('2d');
     boxCtxs.value[index] = ctx;
 
     // Fond doré luxueux
-    const gradient = ctx.createLinearGradient(0, 0, 90, 70);
+    const gradient = ctx.createLinearGradient(0, 0, 75, 55);
     gradient.addColorStop(0, '#ffd700');
     gradient.addColorStop(0.3, '#ffec80');
     gradient.addColorStop(0.5, '#ffd700');
@@ -270,19 +270,19 @@ const initBoxCanvas = (index) => {
     gradient.addColorStop(1, '#b8860b');
 
     ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 90, 70);
+    ctx.fillRect(0, 0, 75, 55);
 
     // Motif diamant
     ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    ctx.font = '20px Arial';
+    ctx.font = '16px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('💎', 45, 35);
+    ctx.fillText('💎', 37, 27);
 
     // Texture brillante
     ctx.fillStyle = 'rgba(255,255,255,0.2)';
-    for (let i = 0; i < 10; i++) {
-        ctx.fillRect(Math.random() * 90, Math.random() * 70, 2, 2);
+    for (let i = 0; i < 8; i++) {
+        ctx.fillRect(Math.random() * 75, Math.random() * 55, 2, 2);
     }
 };
 
@@ -291,14 +291,14 @@ const initBonusCanvas = () => {
     const canvas = bonusCanvas.value;
     if (!canvas) return;
 
-    canvas.width = 140;
-    canvas.height = 100;
+    canvas.width = 110;
+    canvas.height = 75;
 
     const ctx = canvas.getContext('2d');
     bonusCtx.value = ctx;
 
     // Fond métallique
-    const gradient = ctx.createLinearGradient(0, 0, 140, 100);
+    const gradient = ctx.createLinearGradient(0, 0, 110, 75);
     gradient.addColorStop(0, '#4a4a4a');
     gradient.addColorStop(0.3, '#6a6a6a');
     gradient.addColorStop(0.5, '#5a5a5a');
@@ -306,20 +306,20 @@ const initBonusCanvas = () => {
     gradient.addColorStop(1, '#3a3a3a');
 
     ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 140, 100);
+    ctx.fillRect(0, 0, 110, 75);
 
     // Texture
     ctx.fillStyle = 'rgba(255,255,255,0.1)';
-    for (let i = 0; i < 20; i++) {
-        ctx.fillRect(Math.random() * 140, Math.random() * 100, 1, 1);
+    for (let i = 0; i < 15; i++) {
+        ctx.fillRect(Math.random() * 110, Math.random() * 75, 1, 1);
     }
 
     // Symbole coffre
     ctx.fillStyle = 'rgba(255, 215, 0, 0.4)';
-    ctx.font = 'bold 40px Arial';
+    ctx.font = 'bold 30px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('🔐', 70, 50);
+    ctx.fillText('🔐', 55, 37);
 };
 
 // Grattage
@@ -424,38 +424,36 @@ onMounted(() => {
 
 .millionaire-ticket {
     width: 95vw;
-    max-width: 700px;
-    max-height: 95vh;
-    overflow-y: auto;
+    max-width: 650px;
     background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
-    border: 5px solid #ffd700;
-    border-radius: 20px;
-    padding: 25px;
+    border: 4px solid #ffd700;
+    border-radius: 16px;
+    padding: 15px 20px;
     position: relative;
     box-shadow:
-        0 0 50px rgba(255, 215, 0, 0.4),
-        inset 0 0 100px rgba(255, 215, 0, 0.05);
+        0 0 40px rgba(255, 215, 0, 0.4),
+        inset 0 0 80px rgba(255, 215, 0, 0.05);
 }
 
 /* Coins dorés */
 .gold-corners .corner {
     position: absolute;
-    width: 40px;
-    height: 40px;
-    border: 4px solid #ffd700;
+    width: 30px;
+    height: 30px;
+    border: 3px solid #ffd700;
 }
 
-.corner.tl { top: 10px; left: 10px; border-right: none; border-bottom: none; border-radius: 10px 0 0 0; }
-.corner.tr { top: 10px; right: 10px; border-left: none; border-bottom: none; border-radius: 0 10px 0 0; }
-.corner.bl { bottom: 10px; left: 10px; border-right: none; border-top: none; border-radius: 0 0 0 10px; }
-.corner.br { bottom: 10px; right: 10px; border-left: none; border-top: none; border-radius: 0 0 10px 0; }
+.corner.tl { top: 8px; left: 8px; border-right: none; border-bottom: none; border-radius: 8px 0 0 0; }
+.corner.tr { top: 8px; right: 8px; border-left: none; border-bottom: none; border-radius: 0 8px 0 0; }
+.corner.bl { bottom: 8px; left: 8px; border-right: none; border-top: none; border-radius: 0 0 0 8px; }
+.corner.br { bottom: 8px; right: 8px; border-left: none; border-top: none; border-radius: 0 0 8px 0; }
 
 /* Header */
 .ticket-header {
     text-align: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 3px solid rgba(255, 215, 0, 0.4);
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(255, 215, 0, 0.4);
 }
 
 .ticket-logo {
@@ -466,7 +464,7 @@ onMounted(() => {
 }
 
 .crown-icon {
-    font-size: 36px;
+    font-size: 28px;
     animation: crownBounce 2s ease-in-out infinite;
 }
 
@@ -481,53 +479,53 @@ onMounted(() => {
 }
 
 .ticket-title {
-    font-size: 32px;
+    font-size: 26px;
     font-weight: bold;
     background: linear-gradient(135deg, #ffd700, #ffec80, #ffd700);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     text-shadow: none;
-    letter-spacing: 4px;
+    letter-spacing: 3px;
 }
 
 .ticket-subtitle {
-    font-size: 12px;
+    font-size: 11px;
     color: rgba(255, 215, 0, 0.7);
-    letter-spacing: 2px;
+    letter-spacing: 1px;
 }
 
 /* Zone principale */
 .main-zone {
     background: rgba(255, 215, 0, 0.08);
     border: 2px solid rgba(255, 215, 0, 0.3);
-    border-radius: 15px;
-    padding: 15px;
-    margin-bottom: 15px;
+    border-radius: 12px;
+    padding: 10px;
+    margin-bottom: 10px;
 }
 
 .zone-title {
     text-align: center;
     color: #ffd700;
     font-weight: bold;
-    font-size: 16px;
-    margin-bottom: 15px;
-    letter-spacing: 2px;
+    font-size: 13px;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
 }
 
 .gains-grid {
     display: grid;
-    grid-template-columns: repeat(4, 90px);
-    gap: 10px;
+    grid-template-columns: repeat(4, 75px);
+    gap: 8px;
     justify-content: center;
 }
 
 .gain-box {
-    width: 90px;
-    height: 70px;
+    width: 75px;
+    height: 55px;
     position: relative;
     cursor: pointer;
-    border-radius: 10px;
+    border-radius: 8px;
     overflow: hidden;
     border: 2px solid rgba(255, 215, 0, 0.4);
     transition: all 0.3s;
@@ -585,9 +583,9 @@ onMounted(() => {
 .game-rules {
     text-align: center;
     color: rgba(255, 255, 255, 0.6);
-    font-size: 11px;
-    margin-top: 12px;
-    padding-top: 10px;
+    font-size: 10px;
+    margin-top: 8px;
+    padding-top: 8px;
     border-top: 1px solid rgba(255, 215, 0, 0.2);
 }
 
@@ -595,29 +593,29 @@ onMounted(() => {
 .bonus-zone {
     background: linear-gradient(135deg, rgba(74, 74, 74, 0.3), rgba(50, 50, 50, 0.3));
     border: 2px solid rgba(255, 215, 0, 0.3);
-    border-radius: 15px;
-    padding: 15px;
-    margin-bottom: 15px;
+    border-radius: 12px;
+    padding: 10px;
+    margin-bottom: 10px;
     text-align: center;
 }
 
 .bonus-title {
     color: #ffd700;
     font-weight: bold;
-    font-size: 14px;
-    margin-bottom: 12px;
-    letter-spacing: 2px;
+    font-size: 12px;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
 }
 
 .safe-container {
-    width: 140px;
-    height: 100px;
+    width: 110px;
+    height: 75px;
     margin: 0 auto;
     position: relative;
     cursor: pointer;
-    border-radius: 12px;
+    border-radius: 10px;
     overflow: hidden;
-    border: 3px solid #5a5a5a;
+    border: 2px solid #5a5a5a;
     transition: all 0.3s;
 }
 
@@ -655,7 +653,7 @@ onMounted(() => {
 }
 
 .safe-icon {
-    font-size: 40px;
+    font-size: 30px;
 }
 
 .safe-result {
@@ -670,21 +668,21 @@ onMounted(() => {
 }
 
 .bonus-lose {
-    font-size: 36px;
+    font-size: 28px;
 }
 
 .bonus-rules {
     color: rgba(255, 255, 255, 0.5);
-    font-size: 11px;
-    margin-top: 10px;
+    font-size: 10px;
+    margin-top: 6px;
 }
 
 /* Résultat */
 .result-zone {
     text-align: center;
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 10px;
     background: rgba(0, 0, 0, 0.3);
     animation: fadeIn 0.5s ease-out;
 }
@@ -702,23 +700,23 @@ onMounted(() => {
 .win-message {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 5px;
 }
 
 .win-text {
-    font-size: 22px;
+    font-size: 18px;
     color: #ffd700;
 }
 
 .win-amount {
-    font-size: 32px;
+    font-size: 26px;
     font-weight: bold;
     color: #fff;
-    text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
 }
 
 .multiplier-info {
-    font-size: 14px;
+    font-size: 12px;
     color: #ff6b6b;
     font-weight: bold;
 }
@@ -726,16 +724,16 @@ onMounted(() => {
 .lose-message {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 3px;
 }
 
 .lose-text {
-    font-size: 18px;
+    font-size: 15px;
     color: rgba(255, 255, 255, 0.7);
 }
 
 .lose-sub {
-    font-size: 14px;
+    font-size: 12px;
     color: rgba(255, 255, 255, 0.5);
 }
 
@@ -743,11 +741,11 @@ onMounted(() => {
 .action-buttons {
     display: flex;
     justify-content: center;
-    gap: 15px;
+    gap: 12px;
 }
 
 .replay-btn, .close-btn {
-    padding: 12px 24px;
+    padding: 10px 20px;
     border: none;
     border-radius: 10px;
     font-size: 14px;
@@ -783,28 +781,28 @@ onMounted(() => {
 }
 
 /* Responsive */
-@media (max-width: 600px) {
+@media (max-width: 500px) {
     .millionaire-ticket {
-        padding: 15px;
+        padding: 10px 12px;
     }
 
     .ticket-title {
-        font-size: 24px;
-        letter-spacing: 2px;
+        font-size: 20px;
+        letter-spacing: 1px;
     }
 
     .crown-icon {
-        font-size: 28px;
+        font-size: 22px;
     }
 
     .gains-grid {
-        grid-template-columns: repeat(3, 80px);
-        gap: 8px;
+        grid-template-columns: repeat(3, 65px);
+        gap: 6px;
     }
 
     .gain-box {
-        width: 80px;
-        height: 60px;
+        width: 65px;
+        height: 48px;
     }
 
     .box-canvas {
@@ -813,7 +811,12 @@ onMounted(() => {
     }
 
     .gain-value {
-        font-size: 14px;
+        font-size: 12px;
+    }
+
+    .safe-container {
+        width: 90px;
+        height: 60px;
     }
 }
 </style>
