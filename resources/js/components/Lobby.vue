@@ -118,6 +118,7 @@ const selectTicket = (ticket) => {
     flex-direction: column;
     align-items: center;
     padding: 20px;
+    overflow-y: auto;
 }
 
 .balance-display {
@@ -147,10 +148,11 @@ const selectTicket = (ticket) => {
 }
 
 .host-area {
-    flex: 1;
+    flex: 0 0 auto;
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 20px 0;
 }
 
 .host {
@@ -279,9 +281,11 @@ const selectTicket = (ticket) => {
 .ticket-selection {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
-    padding: 30px;
+    padding: 20px;
     border-radius: 20px;
-    margin-bottom: 50px;
+    margin-bottom: 30px;
+    max-height: 70vh;
+    overflow-y: auto;
 }
 
 .ticket-selection h2 {
@@ -293,13 +297,20 @@ const selectTicket = (ticket) => {
 .tickets-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
+    gap: 15px;
+}
+
+@media (max-height: 700px) {
+    .tickets-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+    }
 }
 
 .ticket-option {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 15px;
-    padding: 20px;
+    padding: 15px;
     cursor: pointer;
     transition: all 0.3s;
     border: 2px solid transparent;
