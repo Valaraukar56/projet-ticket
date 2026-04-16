@@ -92,12 +92,12 @@ const handleResult = (result) => {
         balance.value += result.amount;
     }
 
-    // Si YOLO perdu = CHAOS
-    if (currentTicket.value?.cursed && !result.won) {
+    // Si 2 bombes = CHAOS
+    if (result.chaos) {
         setTimeout(() => {
             currentTicket.value = null;
             showChaos.value = true;
-        }, 1500);
+        }, 2000);
         return;
     }
 

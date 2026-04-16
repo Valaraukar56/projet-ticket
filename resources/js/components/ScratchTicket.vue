@@ -1,6 +1,6 @@
 <template>
     <div class="scratch-overlay" @click.self="$emit('close')">
-        <div class="scratch-modal">
+        <div class="scratch-modal" :class="{ 'cursed-modal': ticket.cursed }">
             <button class="close-btn" @click="$emit('close')">X</button>
 
             <h2>{{ ticket.name }} - Prix: {{ ticket.price }}$</h2>
@@ -12,7 +12,8 @@
                     class="scratch-zone"
                     :class="{
                         'revealed': revealedIcons[index],
-                        'matching': revealedIcons[index] && isMatching(index)
+                        'matching': revealedIcons[index] && isMatching(index),
+                        'bomb': revealedIcons[index] && icon.isBomb
                     }"
                 >
                     <canvas
@@ -28,7 +29,7 @@
                 </div>
             </div>
 
-            <div v-if="allRevealed" class="result-message" :class="resultClass">
+            <div v-if="allRevealed && !hasBombChaos" class="result-message" :class="resultClass">
                 <template v-if="jackpot">
                     <span class="jackpot-text">JACKPOT!</span>
                     <span class="result-amount">+{{ ticket.jackpotGain }}$</span>
@@ -43,9 +44,15 @@
                 </template>
             </div>
 
+            <div v-if="allRevealed && hasBombChaos" class="result-message bomb-result">
+                <span class="bomb-text">💣 BOOM 💣</span>
+                <span class="bomb-subtext">Ça va mal se passer...</span>
+            </div>
+
             <div class="legend">
                 <span>2 identiques = {{ ticket.baseGain }}$</span>
                 <span>3 identiques = JACKPOT {{ ticket.jackpotGain }}$</span>
+                <span v-if="ticket.cursed" class="bomb-warning">💣 = DANGER</span>
             </div>
 
             <div class="progress-info">
@@ -75,6 +82,7 @@ const resultIcons = ref([]);
 const won = ref(false);
 const jackpot = ref(false);
 const resultEmitted = ref(false);
+const hasBombChaos = ref(false);
 
 const icons = [
     { emoji: '💎', name: 'Diamant' },
@@ -87,6 +95,8 @@ const icons = [
     { emoji: '🔔', name: 'Cloche' },
 ];
 
+const bombIcon = { emoji: '💣', name: 'Bombe', isBomb: true };
+
 const revealedCount = computed(() => revealedIcons.filter(r => r).length);
 const allRevealed = computed(() => revealedIcons.every(r => r));
 
@@ -98,11 +108,19 @@ const resultClass = computed(() => {
 
 const isMatching = (index) => {
     const currentIcon = resultIcons.value[index].emoji;
+    if (currentIcon === '💣') return false; // Les bombes ne "match" pas pour le gain
     const matchCount = resultIcons.value.filter(i => i.emoji === currentIcon).length;
     return matchCount >= 2;
 };
 
 const generateResult = () => {
+    // Si ticket YOLO (cursed), logique spéciale avec bombes
+    if (props.ticket.cursed) {
+        generateYoloResult();
+        return;
+    }
+
+    // Logique normale pour les autres tickets
     const random = Math.random() * 100;
     const isWin = random > props.ticket.lossPercentage;
 
@@ -129,6 +147,48 @@ const generateResult = () => {
     }
 };
 
+const generateYoloResult = () => {
+    // 50% de chance d'avoir des bombes
+    const hasBombs = Math.random() < 0.5;
+
+    if (hasBombs) {
+        // 2 bombes + 1 icône normale = CHAOS
+        const randomIcon = icons[Math.floor(Math.random() * icons.length)];
+        const positions = [bombIcon, bombIcon, randomIcon];
+        resultIcons.value = positions.sort(() => Math.random() - 0.5);
+        hasBombChaos.value = true;
+        won.value = false;
+        jackpot.value = false;
+    } else {
+        // Ticket normal sans bombes
+        const random = Math.random() * 100;
+        const isWin = random > props.ticket.lossPercentage;
+
+        if (isWin) {
+            const isJackpot = Math.random() < 0.3;
+            const winningIcon = icons[Math.floor(Math.random() * icons.length)];
+
+            if (isJackpot) {
+                resultIcons.value = [winningIcon, winningIcon, winningIcon];
+                jackpot.value = true;
+                won.value = true;
+            } else {
+                const otherIcon = icons.filter(i => i.emoji !== winningIcon.emoji)[Math.floor(Math.random() * (icons.length - 1))];
+                const positions = [winningIcon, winningIcon, otherIcon];
+                resultIcons.value = positions.sort(() => Math.random() - 0.5);
+                won.value = true;
+                jackpot.value = false;
+            }
+        } else {
+            // Perdu mais pas de bombes = perdu simple
+            const shuffled = [...icons].sort(() => Math.random() - 0.5);
+            resultIcons.value = shuffled.slice(0, 3);
+            won.value = false;
+            jackpot.value = false;
+        }
+    }
+};
+
 const initCanvas = (index) => {
     const canvas = canvasRefs.value[index];
     if (!canvas) return;
@@ -139,12 +199,12 @@ const initCanvas = (index) => {
     const ctx = canvas.getContext('2d');
     ctxRefs.value[index] = ctx;
 
-    // Fond gris
-    ctx.fillStyle = '#888';
+    // Fond gris (violet pour YOLO)
+    ctx.fillStyle = props.ticket.cursed ? '#6b21a8' : '#888';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Texture
-    ctx.fillStyle = '#999';
+    ctx.fillStyle = props.ticket.cursed ? '#7c3aed' : '#999';
     for (let i = 0; i < 30; i++) {
         const x = Math.random() * canvas.width;
         const y = Math.random() * canvas.height;
@@ -152,7 +212,7 @@ const initCanvas = (index) => {
     }
 
     // Point d'interrogation
-    ctx.fillStyle = '#666';
+    ctx.fillStyle = props.ticket.cursed ? '#a855f7' : '#666';
     ctx.font = 'bold 40px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -218,16 +278,29 @@ const updatePercentage = (index) => {
         // Vérifier si toutes les icônes sont révélées
         if (allRevealed.value && !resultEmitted.value) {
             resultEmitted.value = true;
-            const winAmount = jackpot.value
-                ? props.ticket.jackpotGain
-                : (won.value ? props.ticket.baseGain : 0);
 
-            emit('result', {
-                won: won.value,
-                jackpot: jackpot.value,
-                amount: winAmount,
-                icons: resultIcons.value,
-            });
+            if (hasBombChaos.value) {
+                // CHAOS - 2 bombes détectées
+                emit('result', {
+                    won: false,
+                    jackpot: false,
+                    amount: 0,
+                    icons: resultIcons.value,
+                    chaos: true,
+                });
+            } else {
+                const winAmount = jackpot.value
+                    ? props.ticket.jackpotGain
+                    : (won.value ? props.ticket.baseGain : 0);
+
+                emit('result', {
+                    won: won.value,
+                    jackpot: jackpot.value,
+                    amount: winAmount,
+                    icons: resultIcons.value,
+                    chaos: false,
+                });
+            }
         }
     }
 };
@@ -255,6 +328,11 @@ const updatePercentage = (index) => {
     position: relative;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     min-width: 420px;
+}
+
+.scratch-modal.cursed-modal {
+    border: 3px solid #a855f7;
+    box-shadow: 0 0 40px rgba(168, 85, 247, 0.4);
 }
 
 .close-btn {
@@ -323,6 +401,17 @@ h2 {
     animation: glow 1s infinite alternate;
 }
 
+.scratch-zone.revealed.bomb {
+    border-color: #ff0000;
+    box-shadow: 0 0 25px rgba(255, 0, 0, 0.7);
+    animation: bombPulse 0.5s infinite alternate;
+}
+
+@keyframes bombPulse {
+    from { box-shadow: 0 0 20px rgba(255, 0, 0, 0.5); }
+    to { box-shadow: 0 0 35px rgba(255, 0, 0, 0.9); }
+}
+
 @keyframes glow {
     from { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
     to { box-shadow: 0 0 30px rgba(255, 215, 0, 0.8); }
@@ -360,6 +449,31 @@ h2 {
 
 .result-message.lose {
     background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+}
+
+.result-message.bomb-result {
+    background: linear-gradient(135deg, #7f1d1d 0%, #450a0a 100%);
+    animation: bombShake 0.1s infinite;
+}
+
+@keyframes bombShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
+}
+
+.bomb-text {
+    font-size: 28px;
+    font-weight: bold;
+    color: #ff4444;
+    display: block;
+    text-shadow: 0 0 10px #ff0000;
+}
+
+.bomb-subtext {
+    font-size: 16px;
+    color: #ffaaaa;
+    display: block;
 }
 
 .jackpot-text {
@@ -404,10 +518,15 @@ h2 {
 .legend {
     display: flex;
     justify-content: center;
-    gap: 30px;
+    gap: 20px;
     margin-top: 15px;
     color: #888;
     font-size: 13px;
+}
+
+.bomb-warning {
+    color: #ff4444;
+    font-weight: bold;
 }
 
 .progress-info {
