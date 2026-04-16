@@ -33,23 +33,23 @@
                     <div v-if="revealed" class="result-message">
                         <template v-if="jackpot">
                             <span class="jackpot-text">JACKPOT!</span>
-                            <span class="result-amount">+{{ ticket.potentialGain * 2 }}$</span>
+                            <span class="result-amount">+{{ ticket.jackpotGain }}$</span>
                         </template>
                         <template v-else-if="won">
                             <span class="win-text">GAGNE!</span>
-                            <span class="result-amount">+{{ ticket.potentialGain }}$</span>
+                            <span class="result-amount">+{{ ticket.baseGain }}$</span>
                         </template>
                         <template v-else>
                             <span class="lose-text">PERDU</span>
-                            <span class="result-amount">-500$</span>
+                            <span class="result-amount">-{{ ticket.price }}$</span>
                         </template>
                     </div>
                 </div>
             </div>
 
             <div class="legend">
-                <span>2 identiques = Gain</span>
-                <span>3 identiques = JACKPOT x2</span>
+                <span>2 identiques = {{ ticket.baseGain }}$</span>
+                <span>3 identiques = JACKPOT {{ ticket.jackpotGain }}$</span>
             </div>
 
             <div class="progress-bar">
@@ -232,8 +232,8 @@ const updatePercentage = () => {
         revealed.value = true;
 
         const winAmount = jackpot.value
-            ? props.ticket.potentialGain * 2
-            : (won.value ? props.ticket.potentialGain : 0);
+            ? props.ticket.jackpotGain
+            : (won.value ? props.ticket.baseGain : 0);
 
         emit('result', {
             won: won.value,

@@ -46,7 +46,8 @@
                         </div>
                         <div class="ticket-info">
                             <span class="ticket-name">{{ ticket.name }}</span>
-                            <span class="ticket-gain">Gain: {{ ticket.potentialGain }}$</span>
+                            <span class="ticket-gain-base">2 icônes: {{ ticket.baseGain }}$</span>
+                            <span class="ticket-gain-jackpot">3 icônes: {{ ticket.jackpotGain }}$</span>
                         </div>
                     </div>
                 </div>
@@ -71,10 +72,10 @@ const showTickets = ref(false);
 const animatedBalance = ref(props.balance);
 
 const ticketTypes = [
-    { id: 1, name: 'Prudent', price: 500, lossPercentage: 30, potentialGain: 800, color: '#4ade80' },
-    { id: 2, name: 'Equilibre', price: 500, lossPercentage: 50, potentialGain: 1500, color: '#fbbf24' },
-    { id: 3, name: 'Risque', price: 500, lossPercentage: 70, potentialGain: 3000, color: '#f87171' },
-    { id: 4, name: 'YOLO', price: 500, lossPercentage: 90, potentialGain: 10000, color: '#a855f7' },
+    { id: 1, name: 'Prudent', price: 500, lossPercentage: 30, baseGain: 650, jackpotGain: 1200, color: '#4ade80' },
+    { id: 2, name: 'Equilibre', price: 500, lossPercentage: 50, baseGain: 800, jackpotGain: 2500, color: '#fbbf24' },
+    { id: 3, name: 'Risque', price: 500, lossPercentage: 70, baseGain: 1000, jackpotGain: 5000, color: '#f87171' },
+    { id: 4, name: 'YOLO', price: 500, lossPercentage: 90, baseGain: 1500, jackpotGain: 15000, color: '#a855f7' },
 ];
 
 watch(() => props.balance, (newVal) => {
@@ -335,8 +336,15 @@ const selectTicket = (ticket) => {
     font-weight: bold;
 }
 
-.ticket-gain {
+.ticket-gain-base {
     color: #4ade80;
+    font-size: 13px;
+}
+
+.ticket-gain-jackpot {
+    color: #ffd700;
+    font-size: 14px;
+    font-weight: bold;
 }
 
 .slide-enter-active,
