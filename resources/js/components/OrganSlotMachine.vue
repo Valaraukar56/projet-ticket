@@ -9,6 +9,21 @@
             </div>
             <div class="machine-subtitle">Vendez vos organes...</div>
 
+            <!-- Inventaire d'organes -->
+            <div class="organ-inventory">
+                <div
+                    v-for="(data, key) in inventory"
+                    :key="key"
+                    class="inventory-item"
+                    :class="{ empty: data.current === 0, lost: lastLostOrgan === key }"
+                >
+                    <span class="inv-icon">{{ data.icon }}</span>
+                    <span class="inv-count" :class="{ critical: data.current <= 1 }">
+                        {{ data.current }}/{{ data.max }}
+                    </span>
+                </div>
+            </div>
+
             <div class="reels-container">
                 <div class="reel" :class="{ spinning: isSpinning && !reelsStopped[0] }">
                     <div class="reel-inner" :style="{ transform: `translateY(${reelPositions[0]}px)` }">
@@ -36,12 +51,18 @@
                 </div>
             </div>
 
+            <!-- Organe perdu -->
+            <div v-if="showLostOrgan" class="lost-organ-display">
+                <span class="lost-icon">{{ lostOrganIcon }}</span>
+                <span class="lost-text">Organe vendu !</span>
+            </div>
+
             <!-- Résultat -->
             <div v-if="showResult" class="result-display" :class="resultClass">
                 <template v-if="isDeath">
                     <div class="death-result">
                         <span class="death-icon">💀</span>
-                        <span class="death-text">VOUS ÊTES MORT</span>
+                        <span class="death-text">{{ deathReason }}</span>
                     </div>
                 </template>
                 <template v-else-if="hasWon">
@@ -51,7 +72,7 @@
                 </template>
                 <template v-else>
                     <div class="lose-result">
-                        <span class="lose-text">Rien...</span>
+                        <span class="lose-text">Pas de combo...</span>
                     </div>
                 </template>
             </div>
@@ -61,7 +82,7 @@
                 <button
                     class="pull-lever"
                     @click="spin"
-                    :disabled="isSpinning"
+                    :disabled="isSpinning || !canPlay"
                 >
                     <span class="lever-icon">🩸</span>
                     {{ isSpinning ? 'EXTRACTION...' : 'VENDRE UN ORGANE' }}
@@ -81,37 +102,39 @@
             <div class="warning-content">
                 <div class="organ-warning death">
                     <span class="organ-icon">🫀</span>
-                    <span class="organ-name">Cœur</span>
+                    <span class="organ-name">Cœur x3</span>
                     <span class="organ-result">= MORT</span>
                 </div>
                 <div class="organ-warning death">
                     <span class="organ-icon">🧠</span>
-                    <span class="organ-name">Cerveau</span>
+                    <span class="organ-name">Cerveau x3</span>
                     <span class="organ-result">= MORT</span>
                 </div>
+                <div class="divider"></div>
                 <div class="organ-warning safe">
                     <span class="organ-icon">🫁</span>
-                    <span class="organ-name">Poumons</span>
+                    <span class="organ-name">Poumons x3</span>
                     <span class="organ-result">+50$</span>
                 </div>
                 <div class="organ-warning safe">
                     <span class="organ-icon">🦴</span>
-                    <span class="organ-name">Os</span>
+                    <span class="organ-name">Os x3</span>
                     <span class="organ-result">+30$</span>
                 </div>
                 <div class="organ-warning safe">
                     <span class="organ-icon">👁️</span>
-                    <span class="organ-name">Œil</span>
+                    <span class="organ-name">Œil x3</span>
                     <span class="organ-result">+20$</span>
                 </div>
                 <div class="organ-warning safe">
                     <span class="organ-icon">🦷</span>
-                    <span class="organ-name">Dent</span>
+                    <span class="organ-name">Dent x3</span>
                     <span class="organ-result">+10$</span>
                 </div>
             </div>
             <div class="warning-footer">
-                3 organes identiques<br/>pour gagner... ou mourir
+                Chaque tour = 1 organe vendu<br/>
+                Plus d'organes = MORT
             </div>
         </div>
 
@@ -122,7 +145,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 
 const emit = defineEmits(['win', 'death', 'escape']);
 
@@ -135,17 +158,37 @@ const organs = [
     { symbol: '🦷', name: 'tooth', gain: 10 },
 ];
 
+// Inventaire des organes du joueur
+const inventory = ref({
+    lungs: { icon: '🫁', current: 2, max: 2, name: 'Poumon' },
+    eyes: { icon: '👁️', current: 2, max: 2, name: 'Œil' },
+    bones: { icon: '🦴', current: 3, max: 3, name: 'Os' },
+    teeth: { icon: '🦷', current: 4, max: 4, name: 'Dent' },
+});
+
 const isSpinning = ref(false);
 const showResult = ref(false);
 const isDeath = ref(false);
 const hasWon = ref(false);
 const winAmount = ref(0);
 const resultClass = ref('');
+const deathReason = ref('');
+const showLostOrgan = ref(false);
+const lostOrganIcon = ref('');
+const lastLostOrgan = ref('');
 
 const reelSymbols = ref([[], [], []]);
 const reelPositions = ref([0, 0, 0]);
 const reelsStopped = ref([false, false, false]);
 const finalSymbols = ref(['', '', '']);
+
+// Calculer le total d'organes restants
+const totalOrgans = computed(() => {
+    return Object.values(inventory.value).reduce((sum, org) => sum + org.current, 0);
+});
+
+// Peut-on encore jouer ?
+const canPlay = computed(() => totalOrgans.value > 0);
 
 // Générer des symboles aléatoires pour l'animation
 const generateReelSymbols = () => {
@@ -156,6 +199,19 @@ const generateReelSymbols = () => {
             reelSymbols.value[i].push(randomOrgan.symbol);
         }
     }
+};
+
+// Perdre un organe aléatoire
+const loseRandomOrgan = () => {
+    const available = Object.entries(inventory.value).filter(([_, data]) => data.current > 0);
+    if (available.length === 0) return null;
+
+    const [key, data] = available[Math.floor(Math.random() * available.length)];
+    inventory.value[key].current--;
+    lastLostOrgan.value = key;
+    lostOrganIcon.value = data.icon;
+
+    return { key, ...data };
 };
 
 // Déterminer le résultat (pondéré pour plus de tension)
@@ -180,7 +236,25 @@ const determineResult = () => {
 };
 
 const spin = () => {
-    if (isSpinning.value) return;
+    if (isSpinning.value || !canPlay.value) return;
+
+    // Perdre un organe d'abord
+    const lostOrgan = loseRandomOrgan();
+    if (!lostOrgan) {
+        // Plus d'organes = mort
+        isDeath.value = true;
+        deathReason.value = 'PLUS D\'ORGANES';
+        showResult.value = true;
+        resultClass.value = 'death';
+        setTimeout(() => emit('death'), 2000);
+        return;
+    }
+
+    // Afficher l'organe perdu
+    showLostOrgan.value = true;
+    setTimeout(() => {
+        showLostOrgan.value = false;
+    }, 1500);
 
     isSpinning.value = true;
     showResult.value = false;
@@ -236,6 +310,7 @@ const checkResult = (results) => {
         if (results[0].fatal) {
             // MORT - organe vital x3
             isDeath.value = true;
+            deathReason.value = results[0].symbol === '🫀' ? 'CRISE CARDIAQUE' : 'MORT CÉRÉBRALE';
             resultClass.value = 'death';
 
             setTimeout(() => {
@@ -252,8 +327,15 @@ const checkResult = (results) => {
             }, 1500);
         }
     } else {
-        // Pas de combo
-        resultClass.value = 'lose';
+        // Pas de combo - vérifier si plus d'organes
+        if (totalOrgans.value === 0) {
+            isDeath.value = true;
+            deathReason.value = 'PLUS D\'ORGANES';
+            resultClass.value = 'death';
+            setTimeout(() => emit('death'), 2000);
+        } else {
+            resultClass.value = 'lose';
+        }
     }
 };
 
@@ -313,7 +395,13 @@ onMounted(() => {
 .warning-content {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
+}
+
+.divider {
+    height: 1px;
+    background: #333;
+    margin: 5px 0;
 }
 
 .organ-warning {
@@ -335,13 +423,13 @@ onMounted(() => {
 }
 
 .organ-icon {
-    font-size: 20px;
+    font-size: 18px;
 }
 
 .organ-name {
     flex: 1;
     color: #ccc;
-    font-size: 12px;
+    font-size: 11px;
 }
 
 .organ-result {
@@ -360,9 +448,10 @@ onMounted(() => {
 .warning-footer {
     margin-top: 15px;
     text-align: center;
-    color: #666;
+    color: #ff6666;
     font-size: 11px;
     line-height: 1.4;
+    font-weight: bold;
 }
 
 /* Machine à sous */
@@ -399,8 +488,106 @@ onMounted(() => {
     text-align: center;
     color: #666;
     font-size: 14px;
-    margin-bottom: 25px;
+    margin-bottom: 15px;
     font-style: italic;
+}
+
+/* Inventaire d'organes */
+.organ-inventory {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 12px 20px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 12px;
+    border: 1px solid #333;
+}
+
+.inventory-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid #444;
+    transition: all 0.3s;
+}
+
+.inventory-item.empty {
+    opacity: 0.3;
+    border-color: #ff0000;
+}
+
+.inventory-item.lost {
+    animation: organLost 0.5s ease-out;
+}
+
+@keyframes organLost {
+    0% { transform: scale(1); background: rgba(255, 0, 0, 0.3); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); background: rgba(255, 255, 255, 0.05); }
+}
+
+.inv-icon {
+    font-size: 24px;
+}
+
+.inv-count {
+    font-size: 12px;
+    font-weight: bold;
+    color: #4ade80;
+}
+
+.inv-count.critical {
+    color: #ff6666;
+    animation: criticalPulse 1s ease-in-out infinite;
+}
+
+@keyframes criticalPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Organe perdu */
+.lost-organ-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 30px;
+    background: rgba(139, 0, 0, 0.9);
+    border: 2px solid #ff0000;
+    border-radius: 15px;
+    z-index: 20;
+    animation: lostAppear 0.3s ease-out;
+}
+
+@keyframes lostAppear {
+    from { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.lost-icon {
+    font-size: 50px;
+    animation: lostShrink 1s ease-in-out forwards;
+}
+
+@keyframes lostShrink {
+    0% { transform: scale(1); }
+    100% { transform: scale(0); opacity: 0; }
+}
+
+.lost-text {
+    color: #ff6666;
+    font-size: 14px;
+    font-weight: bold;
 }
 
 /* Rouleaux */
@@ -511,10 +698,10 @@ onMounted(() => {
 
 .death-text {
     color: #ff0000;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: bold;
     text-shadow: 0 0 20px #ff0000;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
 }
 
 .win-text {
@@ -526,7 +713,7 @@ onMounted(() => {
 
 .lose-text {
     color: #666;
-    font-size: 20px;
+    font-size: 18px;
 }
 
 /* Levier */
