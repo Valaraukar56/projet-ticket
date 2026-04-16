@@ -81,6 +81,7 @@
             </svg>
 
             <!-- Menu tickets -->
+            <div class="menu-overlay" :class="{ open: showMenu }" @click="showMenu = false"></div>
             <div class="menu" :class="{ open: showMenu }">
                 <div class="menu-title">Choisissez un ticket</div>
                 <div class="menu-grid">
@@ -698,17 +699,19 @@ const selectTicket = (ticket) => {
 
 /* Menu */
 .menu {
-    position: absolute;
+    position: fixed;
     left: 50%;
-    top: calc(100% + 14px);
-    transform: translateX(-50%) translateY(8px);
+    top: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
     width: min(380px, 90vw);
+    max-height: 80vh;
+    overflow-y: auto;
     background: var(--menu);
     border: 3px solid var(--menu-border);
     border-radius: 18px;
-    box-shadow: 0 14px 28px rgba(0,0,0,.14);
+    box-shadow: 0 14px 28px rgba(0,0,0,.25);
     padding: 16px;
-    z-index: 30;
+    z-index: 100;
     opacity: 0;
     pointer-events: none;
     transition: opacity .25s ease, transform .25s ease;
@@ -717,7 +720,7 @@ const selectTicket = (ticket) => {
 .menu.open {
     opacity: 1;
     pointer-events: auto;
-    transform: translateX(-50%) translateY(0);
+    transform: translate(-50%, -50%) scale(1);
 }
 
 .menu-title {
@@ -776,6 +779,21 @@ const selectTicket = (ticket) => {
     font-size: 12px;
     color: #27ae60;
     margin-top: 4px;
+}
+
+.menu-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease;
+}
+
+.menu-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .hint {
