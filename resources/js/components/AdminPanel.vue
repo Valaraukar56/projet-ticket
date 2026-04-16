@@ -6,6 +6,38 @@
                 <button class="close-btn" @click="$emit('close')">✕</button>
             </div>
 
+            <!-- Stats -->
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <span class="stat-icon">👤</span>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ stats.accounts_created }}</span>
+                        <span class="stat-label">Comptes créés</span>
+                    </div>
+                </div>
+                <div class="stat-card danger">
+                    <span class="stat-icon">💀</span>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ stats.accounts_destroyed }}</span>
+                        <span class="stat-label">Comptes YOLO</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">✅</span>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ stats.active_users }}</span>
+                        <span class="stat-label">Utilisateurs actifs</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">🔑</span>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ stats.total_logins }}</span>
+                        <span class="stat-label">Connexions totales</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Tabs -->
             <div class="admin-tabs">
                 <button
@@ -140,6 +172,12 @@ const slotSettings = ref({});
 const ticketSettings = ref({});
 const loadingTickets = ref(true);
 const savingTickets = ref(false);
+const stats = ref({
+    accounts_created: 0,
+    accounts_destroyed: 0,
+    active_users: 0,
+    total_logins: 0,
+});
 
 const getCSRFToken = () => {
     return document.querySelector('meta[name="csrf-token"]')?.content;
@@ -153,6 +191,16 @@ const getCategoryIcon = (category) => {
 const getCategoryName = (category) => {
     const names = { metro: 'Ticket Métro', bus: 'Bus', train: 'Train', loterie: 'Loterie' };
     return names[category] || category;
+};
+
+const fetchStats = async () => {
+    try {
+        const response = await fetch('/api/admin/stats');
+        const data = await response.json();
+        stats.value = data;
+    } catch (e) {
+        console.error('Erreur chargement stats:', e);
+    }
 };
 
 const fetchUsers = async () => {
@@ -236,6 +284,7 @@ const saveTicketSettings = async () => {
 };
 
 onMounted(() => {
+    fetchStats();
     fetchUsers();
     fetchTicketSettings();
 });
@@ -293,6 +342,56 @@ onMounted(() => {
 
 .close-btn:hover {
     background: rgba(255, 255, 255, 0.2);
+}
+
+/* Stats Bar */
+.stats-bar {
+    display: flex;
+    gap: 15px;
+    padding: 15px 25px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    overflow-x: auto;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 12px;
+    min-width: fit-content;
+}
+
+.stat-card.danger {
+    background: rgba(255, 0, 0, 0.1);
+    border-color: rgba(255, 0, 0, 0.3);
+}
+
+.stat-card.danger .stat-value {
+    color: #ff4444;
+}
+
+.stat-icon {
+    font-size: 24px;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 22px;
+    font-weight: bold;
+    color: #ffd700;
+}
+
+.stat-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
 }
 
 .admin-tabs {

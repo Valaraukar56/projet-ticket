@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\GameLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -18,6 +19,34 @@ class AdminController extends Controller
         if (!$user || !$user->hasRole('admin')) {
             abort(403, 'Accès refusé');
         }
+    }
+
+    /**
+     * Statistiques globales
+     */
+    public function stats()
+    {
+        $this->checkAdmin();
+
+        try {
+            $accountsCreated = GameLog::where('action', 'register')->count();
+            $accountsDestroyed = GameLog::where('action', 'yolo_death')->count();
+            $totalLogins = GameLog::where('action', 'login')->count();
+        } catch (\Exception $e) {
+            // Si MongoDB n'est pas disponible
+            $accountsCreated = 0;
+            $accountsDestroyed = 0;
+            $totalLogins = 0;
+        }
+
+        $activeUsers = User::count();
+
+        return response()->json([
+            'accounts_created' => $accountsCreated,
+            'accounts_destroyed' => $accountsDestroyed,
+            'active_users' => $activeUsers,
+            'total_logins' => $totalLogins,
+        ]);
     }
 
     /**

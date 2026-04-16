@@ -20,6 +20,7 @@ Route::prefix('api')->group(function () {
 
     // Admin
     Route::prefix('admin')->group(function () {
+        Route::get('/stats', [AdminController::class, 'stats']);
         Route::get('/users', [AdminController::class, 'users']);
         Route::put('/users/{id}/balance', [AdminController::class, 'updateUserBalance']);
         Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
