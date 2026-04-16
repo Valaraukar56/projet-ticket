@@ -3,8 +3,8 @@
         <!-- Écran d'accueil avec porte -->
         <WelcomeDoor v-if="!doorOpened" @open="openDoor" />
 
-        <!-- Lobby avec le bonhomme hôte -->
-        <Lobby v-else :balance="balance" @buy-ticket="handleBuyTicket" />
+        <!-- Scène avec le personnage interactif -->
+        <InteractiveHost v-else :balance="balance" @buy-ticket="handleBuyTicket" />
 
         <!-- Modal ticket à gratter -->
         <ScratchTicket
@@ -32,7 +32,7 @@
 <script setup>
 import { ref } from 'vue';
 import WelcomeDoor from './components/WelcomeDoor.vue';
-import Lobby from './components/Lobby.vue';
+import InteractiveHost from './components/InteractiveHost.vue';
 import ScratchTicket from './components/ScratchTicket.vue';
 import YoloConfirm from './components/YoloConfirm.vue';
 import WindowsError from './components/WindowsError.vue';
