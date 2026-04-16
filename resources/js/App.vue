@@ -101,6 +101,21 @@
                 v-if="showAdminPanel && isAdmin"
                 @close="showAdminPanel = false"
             />
+
+            <!-- Flèche vers le marché noir (quand solde = 0) -->
+            <div v-if="isBroke" class="dark-arrow" @click="openOrganMachine">
+                <div class="arrow-glow"></div>
+                <div class="arrow-icon">→</div>
+                <div class="arrow-text">Marché Noir</div>
+            </div>
+
+            <!-- Machine à sous Organes -->
+            <OrganSlotMachine
+                v-if="showOrganMachine"
+                @win="handleOrganWin"
+                @death="handleOrganDeath"
+                @escape="handleOrganEscape"
+            />
         </template>
 
         <!-- Écran de mort permanent (YOLO perdu) -->
@@ -136,6 +151,7 @@ import MillionaireTicket from './components/MillionaireTicket.vue';
 import RouletteTicket from './components/RouletteTicket.vue';
 import YoloConfirm from './components/YoloConfirm.vue';
 import WindowsError from './components/WindowsError.vue';
+import OrganSlotMachine from './components/OrganSlotMachine.vue';
 
 // État utilisateur
 const user = ref(null);
@@ -152,12 +168,16 @@ const currentTicket = ref(null);
 const showChaos = ref(false);
 const showYoloConfirm = ref(false);
 const pendingYoloTicket = ref(null);
+const showOrganMachine = ref(false);
 
 // Déterminer le type de ticket à afficher
 const isMetroTicket = computed(() => currentTicket.value?.theme === 'astro');
 const isCashTicket = computed(() => currentTicket.value?.theme === 'cash');
 const isMillionaireTicket = computed(() => currentTicket.value?.theme === 'gold');
 const isRouletteTicket = computed(() => currentTicket.value?.theme === 'vegas' && currentTicket.value?.cursed);
+
+// Vérifier si le joueur est fauché (solde = 0)
+const isBroke = computed(() => balance.value <= 0 && doorOpened.value && !currentTicket.value && !showChaos.value);
 
 // Récupérer le token CSRF
 const getCSRFToken = () => {
@@ -323,6 +343,41 @@ const handleChaosComplete = async () => {
     showChaos.value = false;
     showDeathScreen.value = true;
 };
+
+// Marché Noir des Organes
+const openOrganMachine = () => {
+    showOrganMachine.value = true;
+};
+
+const handleOrganWin = (amount) => {
+    balance.value += amount;
+    syncBalance();
+    showOrganMachine.value = false;
+};
+
+const handleOrganDeath = async () => {
+    // Sauvegarder le nom avant suppression
+    deletedUserName.value = user.value?.name || 'Joueur';
+
+    // Supprimer le compte
+    try {
+        await fetch('/api/account', {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': getCSRFToken(),
+            },
+        });
+    } catch (e) {
+        console.error('Erreur suppression compte:', e);
+    }
+
+    showOrganMachine.value = false;
+    showDeathScreen.value = true;
+};
+
+const handleOrganEscape = () => {
+    showOrganMachine.value = false;
+};
 </script>
 
 <style>
@@ -472,5 +527,77 @@ body {
 @keyframes flamesWave {
     from { transform: scaleY(1); }
     to { transform: scaleY(1.2); }
+}
+
+/* Flèche Marché Noir */
+.dark-arrow {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 200;
+    cursor: pointer;
+    padding: 20px 15px 20px 25px;
+    background: linear-gradient(90deg, transparent 0%, rgba(139, 0, 0, 0.8) 30%, rgba(80, 0, 0, 0.95) 100%);
+    border-radius: 15px 0 0 15px;
+    border: 2px solid #8b0000;
+    border-right: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    animation: arrowPulse 2s ease-in-out infinite, arrowSlide 1s ease-out;
+    transition: all 0.3s ease;
+}
+
+.dark-arrow:hover {
+    padding-right: 25px;
+    background: linear-gradient(90deg, transparent 0%, rgba(180, 0, 0, 0.9) 30%, rgba(120, 0, 0, 0.98) 100%);
+}
+
+@keyframes arrowSlide {
+    from { transform: translateY(-50%) translateX(100%); }
+    to { transform: translateY(-50%) translateX(0); }
+}
+
+@keyframes arrowPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(139, 0, 0, 0.5); }
+    50% { box-shadow: 0 0 40px rgba(255, 0, 0, 0.8); }
+}
+
+.arrow-glow {
+    position: absolute;
+    inset: -5px;
+    background: radial-gradient(ellipse at right, rgba(255, 0, 0, 0.3), transparent 70%);
+    pointer-events: none;
+    animation: glowPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+.arrow-icon {
+    font-size: 32px;
+    color: #ff0000;
+    text-shadow: 0 0 20px #ff0000;
+    animation: arrowBounce 1s ease-in-out infinite;
+}
+
+@keyframes arrowBounce {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(5px); }
+}
+
+.arrow-text {
+    color: #ff6666;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
 }
 </style>
