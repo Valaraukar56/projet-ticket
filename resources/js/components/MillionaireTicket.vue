@@ -553,8 +553,8 @@ onMounted(() => {
     position: absolute;
     top: 0;
     left: 0;
-    width: 90px;
-    height: 70px;
+    width: 100%;
+    height: 100%;
     z-index: 2;
     cursor: pointer;
 }
@@ -626,8 +626,8 @@ onMounted(() => {
     position: absolute;
     top: 0;
     left: 0;
-    width: 140px;
-    height: 100px;
+    width: 100%;
+    height: 100%;
     z-index: 2;
     cursor: pointer;
 }
@@ -804,8 +804,8 @@ onMounted(() => {
     }
 
     .box-canvas {
-        width: 80px;
-        height: 60px;
+        width: 100%;
+        height: 100%;
     }
 
     .gain-value {

@@ -566,8 +566,8 @@ onMounted(() => {
     position: absolute;
     top: 0;
     left: 0;
-    width: 80px;
-    height: 80px;
+    width: 100%;
+    height: 100%;
     z-index: 2;
     cursor: pointer;
 }
@@ -620,8 +620,8 @@ onMounted(() => {
     position: absolute;
     top: 0;
     left: 0;
-    width: 120px;
-    height: 65px;
+    width: 100%;
+    height: 100%;
     z-index: 2;
     cursor: pointer;
 }
@@ -690,8 +690,8 @@ onMounted(() => {
     position: absolute;
     top: 0;
     left: 0;
-    width: 120px;
-    height: 80px;
+    width: 100%;
+    height: 100%;
     z-index: 2;
     cursor: pointer;
 }
@@ -844,8 +844,8 @@ onMounted(() => {
     }
 
     .winning-canvas {
-        width: 100px;
-        height: 55px;
+        width: 100%;
+        height: 100%;
     }
 
     .winning-value {
@@ -868,8 +868,8 @@ onMounted(() => {
     }
 
     .winning-canvas {
-        width: 80px;
-        height: 50px;
+        width: 100%;
+        height: 100%;
     }
 
     .number-container {
@@ -878,8 +878,8 @@ onMounted(() => {
     }
 
     .number-canvas {
-        width: 65px;
-        height: 65px;
+        width: 100%;
+        height: 100%;
     }
 
     .number-value {
