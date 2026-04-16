@@ -1,4 +1,4 @@
-FROM php:8.3-fpm
+FROM php:8.3-apache
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -20,17 +20,24 @@ RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 # Install MongoDB extension
 RUN pecl install mongodb && docker-php-ext-enable mongodb
 
+# Enable Apache modules
+RUN a2enmod rewrite
+
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
-WORKDIR /var/www
+# Configure Apache
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Copy existing application
-COPY . /var/www
+# Set AllowOverride All for .htaccess
+RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+
+# Set working directory
+WORKDIR /var/www/html
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www
+RUN chown -R www-data:www-data /var/www/html
 
-EXPOSE 9000
-CMD ["php-fpm"]
+EXPOSE 80
