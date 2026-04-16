@@ -17,13 +17,9 @@
                 >
                     <canvas
                         :ref="el => canvasRefs[index] = el"
-                        @mousedown="(e) => startScratching(e, index)"
-                        @mousemove="(e) => scratch(e, index)"
-                        @mouseup="stopScratching"
-                        @mouseleave="stopScratching"
-                        @touchstart.prevent="(e) => startScratching(e, index)"
-                        @touchmove.prevent="(e) => scratch(e, index)"
-                        @touchend="stopScratching"
+                        @mousemove="(e) => scratchHover(e, index)"
+                        @touchstart.prevent="(e) => scratchHover(e, index)"
+                        @touchmove.prevent="(e) => scratchHover(e, index)"
                     ></canvas>
                     <div class="icon-content">
                         <span class="icon">{{ icon.emoji }}</span>
@@ -73,8 +69,6 @@ const emit = defineEmits(['close', 'result']);
 
 const canvasRefs = ref([]);
 const ctxRefs = ref([]);
-const isScratching = ref(false);
-const currentZone = ref(-1);
 const scratchPercentages = reactive([0, 0, 0]);
 const revealedIcons = reactive([false, false, false]);
 const resultIcons = ref([]);
@@ -184,19 +178,9 @@ const getPosition = (e, canvas) => {
     };
 };
 
-const startScratching = (e, index) => {
+const scratchHover = (e, index) => {
     if (revealedIcons[index]) return;
-    isScratching.value = true;
-    currentZone.value = index;
-    scratchAt(e, index);
-};
 
-const scratch = (e, index) => {
-    if (!isScratching.value || currentZone.value !== index || revealedIcons[index]) return;
-    scratchAt(e, index);
-};
-
-const scratchAt = (e, index) => {
     const canvas = canvasRefs.value[index];
     const ctx = ctxRefs.value[index];
     if (!canvas || !ctx) return;
@@ -208,11 +192,6 @@ const scratchAt = (e, index) => {
     ctx.fill();
 
     updatePercentage(index);
-};
-
-const stopScratching = () => {
-    isScratching.value = false;
-    currentZone.value = -1;
 };
 
 const updatePercentage = (index) => {
