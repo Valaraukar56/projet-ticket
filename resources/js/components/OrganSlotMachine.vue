@@ -1,45 +1,5 @@
 <template>
     <div class="organ-overlay">
-        <!-- Panel latéral d'avertissement -->
-        <div class="warning-panel">
-            <div class="warning-title">⚠️ DANGER</div>
-            <div class="warning-content">
-                <div class="organ-warning death">
-                    <span class="organ-icon">🫀</span>
-                    <span class="organ-name">Cœur</span>
-                    <span class="organ-result">= MORT</span>
-                </div>
-                <div class="organ-warning death">
-                    <span class="organ-icon">🧠</span>
-                    <span class="organ-name">Cerveau</span>
-                    <span class="organ-result">= MORT</span>
-                </div>
-                <div class="organ-warning safe">
-                    <span class="organ-icon">🫁</span>
-                    <span class="organ-name">Poumons</span>
-                    <span class="organ-result">+50$</span>
-                </div>
-                <div class="organ-warning safe">
-                    <span class="organ-icon">🦴</span>
-                    <span class="organ-name">Os</span>
-                    <span class="organ-result">+30$</span>
-                </div>
-                <div class="organ-warning safe">
-                    <span class="organ-icon">👁️</span>
-                    <span class="organ-name">Œil</span>
-                    <span class="organ-result">+20$</span>
-                </div>
-                <div class="organ-warning safe">
-                    <span class="organ-icon">🦷</span>
-                    <span class="organ-name">Dent</span>
-                    <span class="organ-result">+10$</span>
-                </div>
-            </div>
-            <div class="warning-footer">
-                3 organes identiques<br/>pour gagner... ou mourir
-            </div>
-        </div>
-
         <!-- Machine à sous centrale -->
         <div class="organ-machine">
             <div class="machine-title">
@@ -112,6 +72,46 @@
                 <button class="escape-btn" @click="$emit('escape')">
                     Fuir dans l'ombre...
                 </button>
+            </div>
+        </div>
+
+        <!-- Panel latéral d'avertissement -->
+        <div class="warning-panel">
+            <div class="warning-title">⚠️ DANGER</div>
+            <div class="warning-content">
+                <div class="organ-warning death">
+                    <span class="organ-icon">🫀</span>
+                    <span class="organ-name">Cœur</span>
+                    <span class="organ-result">= MORT</span>
+                </div>
+                <div class="organ-warning death">
+                    <span class="organ-icon">🧠</span>
+                    <span class="organ-name">Cerveau</span>
+                    <span class="organ-result">= MORT</span>
+                </div>
+                <div class="organ-warning safe">
+                    <span class="organ-icon">🫁</span>
+                    <span class="organ-name">Poumons</span>
+                    <span class="organ-result">+50$</span>
+                </div>
+                <div class="organ-warning safe">
+                    <span class="organ-icon">🦴</span>
+                    <span class="organ-name">Os</span>
+                    <span class="organ-result">+30$</span>
+                </div>
+                <div class="organ-warning safe">
+                    <span class="organ-icon">👁️</span>
+                    <span class="organ-name">Œil</span>
+                    <span class="organ-result">+20$</span>
+                </div>
+                <div class="organ-warning safe">
+                    <span class="organ-icon">🦷</span>
+                    <span class="organ-name">Dent</span>
+                    <span class="organ-result">+10$</span>
+                </div>
+            </div>
+            <div class="warning-footer">
+                3 organes identiques<br/>pour gagner... ou mourir
             </div>
         </div>
 
@@ -270,8 +270,10 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 80px;
     z-index: 500;
     overflow: hidden;
+    padding: 40px;
 }
 
 .blood-overlay {
@@ -290,15 +292,13 @@ onMounted(() => {
 
 /* Panel d'avertissement */
 .warning-panel {
-    position: absolute;
-    right: 30px;
-    top: 50%;
-    transform: translateY(-50%);
     background: rgba(20, 0, 0, 0.9);
     border: 2px solid #8b0000;
     border-radius: 15px;
     padding: 20px;
-    width: 180px;
+    width: 200px;
+    flex-shrink: 0;
+    z-index: 10;
 }
 
 .warning-title {
