@@ -82,7 +82,7 @@
                 <button
                     class="pull-lever"
                     @click="spin"
-                    :disabled="isSpinning || !canPlay"
+                    :disabled="isSpinning"
                 >
                     <span class="lever-icon">🩸</span>
                     {{ isSpinning ? 'EXTRACTION...' : 'VENDRE UN ORGANE' }}
@@ -133,8 +133,8 @@
                 </div>
             </div>
             <div class="warning-footer">
-                Chaque tour = 1 organe vendu<br/>
-                Plus d'organes = MORT
+                3 identiques = gain + perte organe<br/>
+                0 organe restant = MORT
             </div>
         </div>
 
@@ -162,8 +162,8 @@ const organs = [
 const inventory = ref({
     lungs: { icon: '🫁', current: 2, max: 2, name: 'Poumon' },
     eyes: { icon: '👁️', current: 2, max: 2, name: 'Œil' },
-    bones: { icon: '🦴', current: 3, max: 3, name: 'Os' },
-    teeth: { icon: '🦷', current: 4, max: 4, name: 'Dent' },
+    bones: { icon: '🦴', current: 5, max: 5, name: 'Os' },
+    teeth: { icon: '🦷', current: 32, max: 32, name: 'Dent' },
 });
 
 const isSpinning = ref(false);
@@ -201,17 +201,25 @@ const generateReelSymbols = () => {
     }
 };
 
-// Perdre un organe aléatoire
-const loseRandomOrgan = () => {
-    const available = Object.entries(inventory.value).filter(([_, data]) => data.current > 0);
-    if (available.length === 0) return null;
+// Perdre un organe spécifique (quand on gagne avec cet organe)
+const loseOrgan = (organName) => {
+    const organMap = {
+        'lungs': 'lungs',
+        'eye': 'eyes',
+        'bone': 'bones',
+        'tooth': 'teeth',
+    };
 
-    const [key, data] = available[Math.floor(Math.random() * available.length)];
-    inventory.value[key].current--;
-    lastLostOrgan.value = key;
-    lostOrganIcon.value = data.icon;
+    const key = organMap[organName];
+    if (!key || !inventory.value[key]) return false;
 
-    return { key, ...data };
+    if (inventory.value[key].current > 0) {
+        inventory.value[key].current--;
+        lastLostOrgan.value = key;
+        lostOrganIcon.value = inventory.value[key].icon;
+        return true;
+    }
+    return false;
 };
 
 // Déterminer le résultat (pondéré pour plus de tension)
@@ -236,25 +244,7 @@ const determineResult = () => {
 };
 
 const spin = () => {
-    if (isSpinning.value || !canPlay.value) return;
-
-    // Perdre un organe d'abord
-    const lostOrgan = loseRandomOrgan();
-    if (!lostOrgan) {
-        // Plus d'organes = mort
-        isDeath.value = true;
-        deathReason.value = 'PLUS D\'ORGANES';
-        showResult.value = true;
-        resultClass.value = 'death';
-        setTimeout(() => emit('death'), 2000);
-        return;
-    }
-
-    // Afficher l'organe perdu
-    showLostOrgan.value = true;
-    setTimeout(() => {
-        showLostOrgan.value = false;
-    }, 1500);
+    if (isSpinning.value) return;
 
     isSpinning.value = true;
     showResult.value = false;
@@ -318,24 +308,37 @@ const checkResult = (results) => {
             }, 2000);
         } else {
             // GAIN - organe non-vital x3
-            hasWon.value = true;
-            winAmount.value = results[0].gain;
-            resultClass.value = 'win';
+            // Perdre un organe de ce type
+            const canLose = loseOrgan(results[0].name);
 
-            setTimeout(() => {
-                emit('win', winAmount.value);
-            }, 1500);
+            if (canLose) {
+                // Afficher l'organe perdu
+                showLostOrgan.value = true;
+                setTimeout(() => {
+                    showLostOrgan.value = false;
+                }, 1500);
+
+                hasWon.value = true;
+                winAmount.value = results[0].gain;
+                resultClass.value = 'win';
+
+                setTimeout(() => {
+                    emit('win', winAmount.value);
+                }, 1500);
+            } else {
+                // Plus de cet organe = mort (on a tout vendu)
+                isDeath.value = true;
+                deathReason.value = 'PLUS DE ' + results[0].symbol.toUpperCase();
+                resultClass.value = 'death';
+
+                setTimeout(() => {
+                    emit('death');
+                }, 2000);
+            }
         }
     } else {
-        // Pas de combo - vérifier si plus d'organes
-        if (totalOrgans.value === 0) {
-            isDeath.value = true;
-            deathReason.value = 'PLUS D\'ORGANES';
-            resultClass.value = 'death';
-            setTimeout(() => emit('death'), 2000);
-        } else {
-            resultClass.value = 'lose';
-        }
+        // Pas de combo - rien ne se passe
+        resultClass.value = 'lose';
     }
 };
 
