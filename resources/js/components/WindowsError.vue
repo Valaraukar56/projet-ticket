@@ -24,13 +24,13 @@
         <div v-if="showBSOD" class="bsod">
             <div class="bsod-content">
                 <div class="bsod-sad">:(</div>
-                <h1>Your PC ran into a problem and needs to restart.</h1>
-                <p>We're just collecting some error info, and then we'll restart for you.</p>
-                <p class="bsod-percent">{{ bsodPercent }}% complete</p>
+                <h1>Votre compte va être supprimé.</h1>
+                <p>Nous collectons vos dernières données avant la destruction totale.</p>
+                <p class="bsod-percent">Suppression: {{ bsodPercent }}%</p>
                 <br>
-                <p class="bsod-code">Stop code: TICKET_SCRATCH_YOLO_FAILED</p>
-                <p class="bsod-info">If you call a support person, give them this info:</p>
-                <p class="bsod-info">Error: YOU_SHOULD_NOT_HAVE_PLAYED_YOLO</p>
+                <p class="bsod-code">Stop code: YOLO_ACCOUNT_DELETION</p>
+                <p class="bsod-info">Vous pourrez recréer un compte après.</p>
+                <p class="bsod-info">Error: VOUS_AVEZ_JOUE_YOLO_ET_PERDU</p>
             </div>
         </div>
     </div>
@@ -49,18 +49,18 @@ const errorIdCounter = ref(0);
 const isExploding = ref(false);
 
 const errorMessages = [
-    { title: 'Erreur Critique', message: 'Votre portefeuille a été vidé avec succès.' },
-    { title: 'Alerte Sécurité', message: 'Tentative de gain détectée. Accès refusé.' },
-    { title: 'Erreur Système', message: 'Le fichier argent.dll est corrompu.' },
-    { title: 'Avertissement', message: 'Vous avez choisi YOLO. Vous assumez.' },
-    { title: 'Erreur Fatale', message: 'Exception: TropDeConfianceException' },
-    { title: 'Erreur 404', message: 'Gains introuvables.' },
-    { title: 'Erreur de Calcul', message: '20$ - 20$ = Vous êtes pauvre.' },
-    { title: 'Virus Détecté', message: 'Virus: YOLO.exe - Quarantaine impossible' },
-    { title: 'Mémoire Insuffisante', message: 'Pas assez de chance pour continuer.' },
-    { title: 'Erreur Réseau', message: 'Connexion avec la fortune perdue.' },
-    { title: 'Erreur Windows', message: 'Task failed successfully.' },
-    { title: 'Crash Report', message: 'Cause: Excès de confiance en soi.' },
+    { title: 'Erreur Critique', message: 'Suppression du compte en cours...' },
+    { title: 'Alerte Sécurité', message: 'Compte compromis. Élimination nécessaire.' },
+    { title: 'Erreur Système', message: 'Le fichier utilisateur.dll sera supprimé.' },
+    { title: 'Avertissement', message: 'Vous avez choisi YOLO. Adieu.' },
+    { title: 'Erreur Fatale', message: 'Exception: CompteSuppriméException' },
+    { title: 'Erreur 404', message: 'Votre compte sera introuvable.' },
+    { title: 'Suppression', message: 'DELETE FROM users WHERE yolo = true' },
+    { title: 'Virus Détecté', message: 'Virus: YOLO.exe - Suppression du compte...' },
+    { title: 'Fin de Partie', message: 'Votre aventure se termine ici.' },
+    { title: 'Erreur Réseau', message: 'Déconnexion permanente en cours.' },
+    { title: 'Game Over', message: 'Merci d\'avoir joué. Au revoir.' },
+    { title: 'Crash Report', message: 'Cause: Trop de YOLO. Compte détruit.' },
 ];
 
 const getRandomError = () => {

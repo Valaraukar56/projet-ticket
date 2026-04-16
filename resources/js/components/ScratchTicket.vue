@@ -1,7 +1,7 @@
 <template>
-    <div class="scratch-overlay" @click.self="$emit('close')">
-        <div class="scratch-modal" :class="{ 'cursed-modal': ticket.cursed }">
-            <button class="close-btn" @click="$emit('close')">X</button>
+    <div class="scratch-overlay" @click.self="tryClose">
+        <div class="scratch-modal" :class="['theme-' + (ticket.theme || 'vegas'), { 'cursed-modal': ticket.cursed }]">
+            <button v-if="allRevealed && !hasBombChaos" class="close-btn" @click="tryClose">X</button>
 
             <h2>{{ ticket.name }} - Prix: {{ ticket.price }}$</h2>
 
@@ -44,6 +44,13 @@
                 </template>
             </div>
 
+            <div v-if="allRevealed && !hasBombChaos" class="action-buttons">
+                <button class="replay-btn" :class="{ disabled: !canReplay }" @click="replay">
+                    🔄 Rejouer ({{ ticket.price }}$)
+                </button>
+                <button class="close-ticket-btn" @click="tryClose">Fermer</button>
+            </div>
+
             <div v-if="allRevealed && hasBombChaos" class="result-message bomb-result">
                 <span class="bomb-text">💣 BOOM 💣</span>
                 <span class="bomb-subtext">Ça va mal se passer...</span>
@@ -70,9 +77,15 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    balance: {
+        type: Number,
+        required: true,
+    },
 });
 
-const emit = defineEmits(['close', 'result']);
+const emit = defineEmits(['close', 'result', 'replay']);
+
+const canReplay = computed(() => props.balance >= props.ticket.price);
 
 const canvasRefs = ref([]);
 const ctxRefs = ref([]);
@@ -84,16 +97,61 @@ const jackpot = ref(false);
 const resultEmitted = ref(false);
 const hasBombChaos = ref(false);
 
-const icons = [
-    { emoji: '💎', name: 'Diamant' },
-    { emoji: '🍀', name: 'Trèfle' },
-    { emoji: '⭐', name: 'Étoile' },
-    { emoji: '🎰', name: 'Slot' },
-    { emoji: '💰', name: 'Sac' },
-    { emoji: '🍒', name: 'Cerise' },
-    { emoji: '7️⃣', name: 'Sept' },
-    { emoji: '🔔', name: 'Cloche' },
-];
+// Icônes par thème
+const iconsByTheme = {
+    astro: [
+        { emoji: '⭐', name: 'Étoile' },
+        { emoji: '🌙', name: 'Lune' },
+        { emoji: '🪐', name: 'Planète' },
+        { emoji: '☄️', name: 'Comète' },
+        { emoji: '🌟', name: 'Brillante' },
+        { emoji: '🔭', name: 'Téléscope' },
+        { emoji: '🛸', name: 'OVNI' },
+        { emoji: '🌌', name: 'Galaxie' },
+    ],
+    cash: [
+        { emoji: '💵', name: 'Billet' },
+        { emoji: '💰', name: 'Sac' },
+        { emoji: '🏦', name: 'Banque' },
+        { emoji: '💳', name: 'Carte' },
+        { emoji: '🤑', name: 'Riche' },
+        { emoji: '💲', name: 'Dollar' },
+        { emoji: '🪙', name: 'Pièce' },
+        { emoji: '📈', name: 'Hausse' },
+    ],
+    gold: [
+        { emoji: '👑', name: 'Couronne' },
+        { emoji: '💎', name: 'Diamant' },
+        { emoji: '🏆', name: 'Trophée' },
+        { emoji: '🥇', name: 'Médaille' },
+        { emoji: '💍', name: 'Bague' },
+        { emoji: '⚜️', name: 'Fleur Lys' },
+        { emoji: '🔱', name: 'Trident' },
+        { emoji: '✨', name: 'Étincelle' },
+    ],
+    vegas: [
+        { emoji: '🎰', name: 'Slot' },
+        { emoji: '🃏', name: 'Joker' },
+        { emoji: '🎲', name: 'Dés' },
+        { emoji: '♠️', name: 'Pique' },
+        { emoji: '♥️', name: 'Coeur' },
+        { emoji: '7️⃣', name: 'Sept' },
+        { emoji: '🍒', name: 'Cerise' },
+        { emoji: '🔔', name: 'Cloche' },
+    ],
+};
+
+// Couleurs par thème
+const themeColors = {
+    astro: { primary: '#1e1b4b', secondary: '#4338ca', accent: '#818cf8', scratch: '#312e81' },
+    cash: { primary: '#14532d', secondary: '#22c55e', accent: '#86efac', scratch: '#166534' },
+    gold: { primary: '#78350f', secondary: '#f59e0b', accent: '#fcd34d', scratch: '#92400e' },
+    vegas: { primary: '#450a0a', secondary: '#dc2626', accent: '#fca5a5', scratch: '#7f1d1d' },
+};
+
+const currentTheme = computed(() => props.ticket.theme || 'vegas');
+const icons = computed(() => iconsByTheme[currentTheme.value] || iconsByTheme.vegas);
+const colors = computed(() => themeColors[currentTheme.value] || themeColors.vegas);
 
 const bombIcon = { emoji: '💣', name: 'Bombe', isBomb: true };
 
@@ -123,24 +181,25 @@ const generateResult = () => {
     // Logique normale pour les autres tickets
     const random = Math.random() * 100;
     const isWin = random > props.ticket.lossPercentage;
+    const themeIcons = icons.value;
 
     if (isWin) {
         const isJackpot = Math.random() < 0.3;
-        const winningIcon = icons[Math.floor(Math.random() * icons.length)];
+        const winningIcon = themeIcons[Math.floor(Math.random() * themeIcons.length)];
 
         if (isJackpot) {
             resultIcons.value = [winningIcon, winningIcon, winningIcon];
             jackpot.value = true;
             won.value = true;
         } else {
-            const otherIcon = icons.filter(i => i.emoji !== winningIcon.emoji)[Math.floor(Math.random() * (icons.length - 1))];
+            const otherIcon = themeIcons.filter(i => i.emoji !== winningIcon.emoji)[Math.floor(Math.random() * (themeIcons.length - 1))];
             const positions = [winningIcon, winningIcon, otherIcon];
             resultIcons.value = positions.sort(() => Math.random() - 0.5);
             won.value = true;
             jackpot.value = false;
         }
     } else {
-        const shuffled = [...icons].sort(() => Math.random() - 0.5);
+        const shuffled = [...themeIcons].sort(() => Math.random() - 0.5);
         resultIcons.value = shuffled.slice(0, 3);
         won.value = false;
         jackpot.value = false;
@@ -150,10 +209,11 @@ const generateResult = () => {
 const generateYoloResult = () => {
     // 50% de chance d'avoir des bombes
     const hasBombs = Math.random() < 0.5;
+    const themeIcons = icons.value;
 
     if (hasBombs) {
         // 2 bombes + 1 icône normale = CHAOS
-        const randomIcon = icons[Math.floor(Math.random() * icons.length)];
+        const randomIcon = themeIcons[Math.floor(Math.random() * themeIcons.length)];
         const positions = [bombIcon, bombIcon, randomIcon];
         resultIcons.value = positions.sort(() => Math.random() - 0.5);
         hasBombChaos.value = true;
@@ -166,14 +226,14 @@ const generateYoloResult = () => {
 
         if (isWin) {
             const isJackpot = Math.random() < 0.3;
-            const winningIcon = icons[Math.floor(Math.random() * icons.length)];
+            const winningIcon = themeIcons[Math.floor(Math.random() * themeIcons.length)];
 
             if (isJackpot) {
                 resultIcons.value = [winningIcon, winningIcon, winningIcon];
                 jackpot.value = true;
                 won.value = true;
             } else {
-                const otherIcon = icons.filter(i => i.emoji !== winningIcon.emoji)[Math.floor(Math.random() * (icons.length - 1))];
+                const otherIcon = themeIcons.filter(i => i.emoji !== winningIcon.emoji)[Math.floor(Math.random() * (themeIcons.length - 1))];
                 const positions = [winningIcon, winningIcon, otherIcon];
                 resultIcons.value = positions.sort(() => Math.random() - 0.5);
                 won.value = true;
@@ -181,7 +241,7 @@ const generateYoloResult = () => {
             }
         } else {
             // Perdu mais pas de bombes = perdu simple
-            const shuffled = [...icons].sort(() => Math.random() - 0.5);
+            const shuffled = [...themeIcons].sort(() => Math.random() - 0.5);
             resultIcons.value = shuffled.slice(0, 3);
             won.value = false;
             jackpot.value = false;
@@ -199,12 +259,14 @@ const initCanvas = (index) => {
     const ctx = canvas.getContext('2d');
     ctxRefs.value[index] = ctx;
 
-    // Fond gris (violet pour YOLO)
-    ctx.fillStyle = props.ticket.cursed ? '#6b21a8' : '#888';
+    const themeColor = colors.value;
+
+    // Fond avec couleur du thème
+    ctx.fillStyle = themeColor.scratch;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Texture
-    ctx.fillStyle = props.ticket.cursed ? '#7c3aed' : '#999';
+    // Texture avec particules
+    ctx.fillStyle = themeColor.secondary;
     for (let i = 0; i < 30; i++) {
         const x = Math.random() * canvas.width;
         const y = Math.random() * canvas.height;
@@ -212,7 +274,7 @@ const initCanvas = (index) => {
     }
 
     // Point d'interrogation
-    ctx.fillStyle = props.ticket.cursed ? '#a855f7' : '#666';
+    ctx.fillStyle = themeColor.accent;
     ctx.font = 'bold 40px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -252,6 +314,19 @@ const scratchHover = (e, index) => {
     ctx.fill();
 
     updatePercentage(index);
+};
+
+const tryClose = () => {
+    // On ne peut fermer que si tout est révélé ET pas de chaos en cours
+    if (allRevealed.value && !hasBombChaos.value) {
+        emit('close');
+    }
+};
+
+const replay = () => {
+    if (canReplay.value && allRevealed.value && !hasBombChaos.value) {
+        emit('replay', props.ticket);
+    }
 };
 
 const updatePercentage = (index) => {
@@ -321,18 +396,132 @@ const updatePercentage = (index) => {
 }
 
 .scratch-modal {
-    background: linear-gradient(135deg, #2d2d5a 0%, #1e1e3f 100%);
     padding: 30px;
     border-radius: 20px;
     text-align: center;
     position: relative;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     min-width: 420px;
+    border: 3px solid transparent;
+}
+
+/* Thème Astro (Métro) - Espace et étoiles */
+.scratch-modal.theme-astro {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+    border-color: #818cf8;
+    box-shadow: 0 20px 60px rgba(99, 102, 241, 0.3);
+}
+
+.scratch-modal.theme-astro h2 {
+    color: #c7d2fe;
+}
+
+.scratch-modal.theme-astro::before {
+    content: '✨';
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    font-size: 24px;
+}
+
+.scratch-modal.theme-astro::after {
+    content: '🌙';
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    font-size: 24px;
+}
+
+/* Thème Cash (Bus) - Argent et billets */
+.scratch-modal.theme-cash {
+    background: linear-gradient(135deg, #14532d 0%, #166534 100%);
+    border-color: #86efac;
+    box-shadow: 0 20px 60px rgba(34, 197, 94, 0.3);
+}
+
+.scratch-modal.theme-cash h2 {
+    color: #bbf7d0;
+}
+
+.scratch-modal.theme-cash::before {
+    content: '💵';
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    font-size: 24px;
+}
+
+.scratch-modal.theme-cash::after {
+    content: '💰';
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    font-size: 24px;
+}
+
+/* Thème Gold (Train) - Or et luxe */
+.scratch-modal.theme-gold {
+    background: linear-gradient(135deg, #78350f 0%, #92400e 100%);
+    border-color: #fcd34d;
+    box-shadow: 0 20px 60px rgba(245, 158, 11, 0.3);
+}
+
+.scratch-modal.theme-gold h2 {
+    color: #fef3c7;
+}
+
+.scratch-modal.theme-gold::before {
+    content: '👑';
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    font-size: 24px;
+}
+
+.scratch-modal.theme-gold::after {
+    content: '💎';
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    font-size: 24px;
+}
+
+/* Thème Vegas (Loterie) - Casino et néons */
+.scratch-modal.theme-vegas {
+    background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%);
+    border-color: #fca5a5;
+    box-shadow: 0 20px 60px rgba(220, 38, 38, 0.3);
+}
+
+.scratch-modal.theme-vegas h2 {
+    color: #fecaca;
+}
+
+.scratch-modal.theme-vegas::before {
+    content: '🎰';
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    font-size: 24px;
+}
+
+.scratch-modal.theme-vegas::after {
+    content: '🎲';
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    font-size: 24px;
 }
 
 .scratch-modal.cursed-modal {
     border: 3px solid #a855f7;
     box-shadow: 0 0 40px rgba(168, 85, 247, 0.4);
+    animation: cursedPulse 2s infinite;
+}
+
+@keyframes cursedPulse {
+    0%, 100% { box-shadow: 0 0 40px rgba(168, 85, 247, 0.4); }
+    50% { box-shadow: 0 0 60px rgba(168, 85, 247, 0.7); }
 }
 
 .close-btn {
@@ -533,5 +722,48 @@ h2 {
     margin-top: 10px;
     color: #ffd700;
     font-size: 14px;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.replay-btn, .close-ticket-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.replay-btn {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    color: #1a1a2e;
+}
+
+.replay-btn:hover:not(.disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(74, 222, 128, 0.4);
+}
+
+.replay-btn.disabled {
+    background: #555;
+    color: #888;
+    cursor: not-allowed;
+}
+
+.close-ticket-btn {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    color: white;
+}
+
+.close-ticket-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(107, 114, 128, 0.4);
 }
 </style>

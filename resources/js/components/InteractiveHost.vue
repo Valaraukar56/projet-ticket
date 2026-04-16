@@ -44,10 +44,26 @@
         <!-- Comptoir -->
         <div class="counter"></div>
 
-        <!-- Balance -->
-        <div class="balance-display">
-            <span class="balance-icon">$</span>
-            <span class="balance-amount">{{ balance }}</span>
+        <!-- Boutons haut gauche -->
+        <div class="top-left-buttons">
+            <button class="leaderboard-btn" @click="$emit('show-leaderboard')" title="Classement">
+                🏆
+            </button>
+            <button v-if="isAdmin" class="admin-btn" @click="$emit('show-admin')" title="Panel Admin">
+                🛠️
+            </button>
+        </div>
+
+        <!-- Infos utilisateur et balance -->
+        <div class="top-right-panel">
+            <div class="user-info" v-if="user">
+                <span class="user-name">{{ user.name }}</span>
+                <button class="logout-btn" @click="$emit('logout')">Déconnexion</button>
+            </div>
+            <div class="balance-display">
+                <span class="balance-icon">$</span>
+                <span class="balance-amount">{{ balance }}</span>
+            </div>
         </div>
 
         <!-- Personnage -->
@@ -55,21 +71,22 @@
             <div class="speech" :class="{ show: showSpeech }">{{ speechText }}</div>
 
             <svg class="char-svg" @click="onCharacterClick" viewBox="0 0 280 390">
+                <!-- Corps -->
                 <g class="torso-upper">
                     <rect x="104" y="176" width="72" height="88" rx="18" fill="var(--shirt)" stroke="var(--line)" stroke-width="6"/>
                 </g>
 
-                <g class="arm-l" style="transform-origin:106px 190px;">
-                    <line x1="106" y1="190" x2="102" y2="270" stroke="var(--line)" stroke-width="9" stroke-linecap="round"/>
+                <!-- Main gauche flottante (style Rayman) -->
+                <g class="hand-l">
+                    <circle cx="70" cy="240" r="18" fill="var(--skin)" stroke="var(--line)" stroke-width="5"/>
                 </g>
 
-                <g class="arm-r" style="transform-origin:170px 190px;">
-                    <line x1="170" y1="190" x2="176" y2="248" stroke="var(--line)" stroke-width="9" stroke-linecap="round"/>
-                    <g class="forearm-r" style="transform-origin:176px 248px;">
-                        <line x1="176" y1="248" x2="202" y2="210" stroke="var(--line)" stroke-width="9" stroke-linecap="round"/>
-                    </g>
+                <!-- Main droite flottante (style Rayman) -->
+                <g class="hand-r">
+                    <circle cx="210" cy="240" r="18" fill="var(--skin)" stroke="var(--line)" stroke-width="5"/>
                 </g>
 
+                <!-- Tête -->
                 <g class="head-g">
                     <circle cx="140" cy="106" r="78" fill="var(--skin)" stroke="var(--line)" stroke-width="7"/>
                     <line class="brow-l" x1="100" y1="86" x2="122" y2="83" stroke="var(--line)" stroke-width="7" stroke-linecap="round"/>
@@ -79,25 +96,45 @@
                     <path class="mouth" d="M122 142 Q140 148 158 142" fill="none" stroke="#000" stroke-width="5" stroke-linecap="round"/>
                 </g>
             </svg>
+        </div>
 
-            <!-- Menu tickets -->
-            <div class="menu-overlay" :class="{ open: showMenu }" @click="showMenu = false"></div>
-            <div class="menu" :class="{ open: showMenu }">
-                <div class="menu-title">Choisissez un ticket</div>
-                <div class="menu-grid">
-                    <button
-                        v-for="ticket in tickets"
-                        :key="ticket.id"
-                        class="menu-btn"
-                        :class="{ disabled: balance < ticket.price }"
-                        :style="{ borderColor: ticket.color }"
-                        @click="selectTicket(ticket)"
-                    >
-                        <span class="ticket-name">{{ ticket.name }}</span>
-                        <span class="ticket-details">{{ ticket.price }}$ - {{ ticket.lossPercentage }}% risque</span>
-                        <span class="ticket-gains">Gain: {{ ticket.baseGain }}$ | Jackpot: {{ ticket.jackpotGain }}$</span>
-                    </button>
-                </div>
+        <!-- Menu catégories -->
+        <div class="menu-overlay" :class="{ open: showMenu || showTickets }" @click="showMenu = false; showTickets = false; selectedCategory = null;"></div>
+        <div class="menu" :class="{ open: showMenu }">
+            <div class="menu-title">Choisissez une catégorie</div>
+            <div class="menu-grid">
+                <button
+                    v-for="category in categories"
+                    :key="category.id"
+                    class="menu-btn category-btn"
+                    :style="{ borderColor: category.color }"
+                    @click="selectCategory(category)"
+                >
+                    <span class="category-icon">{{ category.icon }}</span>
+                    <span class="category-name">{{ category.name }}</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Menu tickets de la catégorie -->
+        <div class="menu" :class="{ open: showTickets }">
+            <button class="back-btn" @click="backToCategories">← Retour</button>
+            <div class="menu-title">
+                <span v-if="selectedCategory">{{ selectedCategory.icon }} {{ selectedCategory.name }}</span>
+            </div>
+            <div class="menu-grid">
+                <button
+                    v-for="ticket in currentTickets"
+                    :key="ticket.id"
+                    class="menu-btn"
+                    :class="{ disabled: balance < ticket.price }"
+                    :style="{ borderColor: ticket.color }"
+                    @click="selectTicket(ticket)"
+                >
+                    <span class="ticket-name">{{ ticket.name }}</span>
+                    <span class="ticket-details">{{ ticket.price }}$ - {{ ticket.lossPercentage }}% risque</span>
+                    <span class="ticket-gains">Gain: {{ ticket.baseGain }}$ | Jackpot: {{ ticket.jackpotGain }}$</span>
+                </button>
             </div>
         </div>
 
@@ -107,19 +144,6 @@
                 <div class="papers">
                     <div class="paper p1"></div>
                     <div class="paper p2"></div>
-                </div>
-                <div class="laptop">
-                    <div class="laptop-screen">
-                        <div class="code-lines">
-                            <div class="code-line cl1"></div>
-                            <div class="code-line cl2"></div>
-                            <div class="code-line cl3"></div>
-                            <div class="code-line cl4"></div>
-                            <div class="code-line cl5"></div>
-                            <div class="code-line cl6"></div>
-                        </div>
-                    </div>
-                    <div class="laptop-base"></div>
                 </div>
                 <div class="mug">
                     <div class="steam"><span></span><span></span><span></span></div>
@@ -144,23 +168,92 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 
 const props = defineProps({
     balance: {
         type: Number,
         required: true,
     },
+    user: {
+        type: Object,
+        default: null,
+    },
+    isAdmin: {
+        type: Boolean,
+        default: false,
+    },
 });
 
-const emit = defineEmits(['buy-ticket']);
+const emit = defineEmits(['buy-ticket', 'show-leaderboard', 'show-admin', 'logout']);
 
-const tickets = [
-    { id: 1, name: 'Prudent', price: 2, lossPercentage: 30, baseGain: 3, jackpotGain: 15, color: '#4ade80' },
-    { id: 2, name: 'Equilibre', price: 5, lossPercentage: 50, baseGain: 8, jackpotGain: 50, color: '#fbbf24' },
-    { id: 3, name: 'Risque', price: 10, lossPercentage: 70, baseGain: 18, jackpotGain: 200, color: '#f87171' },
-    { id: 4, name: 'YOLO', price: 20, lossPercentage: 90, baseGain: 1000, jackpotGain: 10000, color: '#a855f7', cursed: true },
+// Catégories de tickets
+const categories = [
+    { id: 'metro', name: 'Ticket Métro', icon: '🚇', color: '#4ade80' },
+    { id: 'bus', name: 'Bus', icon: '🚌', color: '#60a5fa' },
+    { id: 'train', name: 'Train', icon: '🚄', color: '#fbbf24' },
+    { id: 'loterie', name: 'Loterie', icon: '🎰', color: '#a855f7' },
 ];
+
+// Thèmes et couleurs par catégorie
+const categoryMeta = {
+    metro: { color: '#4ade80', theme: 'astro' },
+    bus: { color: '#60a5fa', theme: 'cash' },
+    train: { color: '#fbbf24', theme: 'gold' },
+    loterie: { color: '#a855f7', theme: 'vegas' },
+};
+
+// Tickets par catégorie (chargés depuis le backend)
+const ticketsByCategory = ref({
+    metro: [
+        { id: 'm1', name: 'Étoile Filante', price: 1, lossPercentage: 20, baseGain: 2, jackpotGain: 5 },
+        { id: 'm2', name: 'Constellation', price: 2, lossPercentage: 25, baseGain: 3, jackpotGain: 8 },
+        { id: 'm3', name: 'Galaxie', price: 3, lossPercentage: 30, baseGain: 5, jackpotGain: 12 },
+        { id: 'm4', name: 'Cosmos', price: 5, lossPercentage: 35, baseGain: 8, jackpotGain: 20 },
+    ],
+    bus: [
+        { id: 'b1', name: 'Petit Cash', price: 2, lossPercentage: 30, baseGain: 3, jackpotGain: 10 },
+        { id: 'b2', name: 'Cash Express', price: 4, lossPercentage: 35, baseGain: 6, jackpotGain: 18 },
+        { id: 'b3', name: 'Banco', price: 6, lossPercentage: 40, baseGain: 10, jackpotGain: 30 },
+        { id: 'b4', name: 'Mega Cash', price: 10, lossPercentage: 45, baseGain: 18, jackpotGain: 50 },
+    ],
+    train: [
+        { id: 't1', name: 'Pépite', price: 5, lossPercentage: 45, baseGain: 8, jackpotGain: 30 },
+        { id: 't2', name: 'Lingot', price: 10, lossPercentage: 50, baseGain: 18, jackpotGain: 80 },
+        { id: 't3', name: 'Trésor', price: 15, lossPercentage: 55, baseGain: 28, jackpotGain: 150 },
+        { id: 't4', name: 'El Dorado', price: 25, lossPercentage: 60, baseGain: 50, jackpotGain: 300 },
+    ],
+    loterie: [
+        { id: 'l1', name: 'Vegas Night', price: 5, lossPercentage: 70, baseGain: 15, jackpotGain: 100 },
+        { id: 'l2', name: 'High Roller', price: 10, lossPercentage: 75, baseGain: 35, jackpotGain: 500 },
+        { id: 'l3', name: 'Royal Flush', price: 20, lossPercentage: 85, baseGain: 100, jackpotGain: 2000 },
+        { id: 'l4', name: 'YOLO', price: 50, lossPercentage: 90, baseGain: 5000, jackpotGain: 10000, cursed: true },
+    ],
+});
+
+// Charger les tickets depuis le backend
+const loadTicketSettings = async () => {
+    try {
+        const response = await fetch('/api/admin/tickets');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.tickets) {
+                // Fusionner avec les métadonnées (couleur, thème)
+                for (const category in data.tickets) {
+                    if (ticketsByCategory.value[category]) {
+                        ticketsByCategory.value[category] = data.tickets[category].map(ticket => ({
+                            ...ticket,
+                            color: ticket.cursed ? '#ef4444' : categoryMeta[category].color,
+                            theme: categoryMeta[category].theme,
+                        }));
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        console.log('Utilisation des tickets par défaut');
+    }
+};
 
 const characterRef = ref(null);
 const deskRef = ref(null);
@@ -168,21 +261,30 @@ const animClass = ref('anim-idle');
 const showSpeech = ref(false);
 const speechText = ref('Bonjour !');
 const showMenu = ref(false);
+const showTickets = ref(false);
+const selectedCategory = ref(null);
 const hintHidden = ref(false);
 const greeted = ref(false);
+
+const currentTickets = computed(() => {
+    if (!selectedCategory.value) return [];
+    return ticketsByCategory.value[selectedCategory.value.id] || [];
+});
 
 let animTimer = null;
 
 const alignCharacter = () => {
     if (!characterRef.value || !deskRef.value) return;
     const deskRect = deskRef.value.getBoundingClientRect();
+    // Positionner le personnage derrière le bureau (plus bas pour que le bureau le cache partiellement)
     const bottomPx = window.innerHeight - deskRect.top;
-    characterRef.value.style.bottom = (bottomPx - 8) + 'px';
+    characterRef.value.style.bottom = (bottomPx - 160) + 'px';
 };
 
 onMounted(() => {
     alignCharacter();
     window.addEventListener('resize', alignCharacter);
+    loadTicketSettings();
 });
 
 const setIdle = () => {
@@ -215,9 +317,22 @@ const onCharacterClick = () => {
     showMenu.value = !showMenu.value;
 };
 
+const selectCategory = (category) => {
+    selectedCategory.value = category;
+    showMenu.value = false;
+    showTickets.value = true;
+};
+
+const backToCategories = () => {
+    showTickets.value = false;
+    selectedCategory.value = null;
+    showMenu.value = true;
+};
+
 const selectTicket = (ticket) => {
     if (props.balance < ticket.price) return;
-    showMenu.value = false;
+    showTickets.value = false;
+    selectedCategory.value = null;
     emit('buy-ticket', ticket);
 };
 </script>
@@ -291,22 +406,108 @@ const selectTicket = (ticket) => {
     border-top: 7px solid #6d3f1e;
 }
 
-.balance-display {
+/* Boutons haut gauche */
+.top-left-buttons {
     position: absolute;
     top: 20px;
-    right: 20px;
-    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
-    padding: 15px 30px;
-    border-radius: 50px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 5px 20px rgba(255, 215, 0, 0.4);
+    left: 20px;
     z-index: 50;
 }
 
-.balance-icon, .balance-amount {
+.leaderboard-btn {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffd700, #ffaa00);
+    border: 3px solid #d4a200;
     font-size: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 5px 20px rgba(255, 215, 0, 0.4);
+    transition: all 0.2s;
+}
+
+.leaderboard-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 30px rgba(255, 215, 0, 0.6);
+}
+
+.admin-btn {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    border: 3px solid #a93226;
+    font-size: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4);
+    transition: all 0.2s;
+}
+
+.admin-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 30px rgba(231, 76, 60, 0.6);
+}
+
+/* Panel haut droite */
+.top-right-panel {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    z-index: 50;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px 16px;
+    border-radius: 25px;
+}
+
+.user-name {
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.logout-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 15px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.logout-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.balance-display {
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+    padding: 12px 25px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 5px 20px rgba(255, 215, 0, 0.4);
+}
+
+.balance-icon, .balance-amount {
+    font-size: 24px;
     font-weight: bold;
     color: #1a1a2e;
 }
@@ -329,15 +530,16 @@ const selectTicket = (ticket) => {
     box-shadow: 0 3px 6px rgba(0,0,0,.25);
 }
 
-.shelf-rail.top { top: 0; }
-.shelf-rail.mid { top: 54px; }
+.shelf-rail.top { top: 56px; }
+.shelf-rail.mid { top: 114px; }
 
 .shelf-side {
     position: absolute;
-    top: 0; bottom: -4px;
+    top: 0;
     width: 9px;
     background: linear-gradient(90deg, #6e3e18, #9a6030);
     border-radius: 5px;
+    height: 124px;
 }
 
 .shelf-side.left { left: 0; }
@@ -347,12 +549,13 @@ const selectTicket = (ticket) => {
     position: absolute;
     left: 18px; right: 18px;
     display: flex;
-    gap: 8px;
+    gap: 6px;
     align-items: flex-end;
+    bottom: auto;
 }
 
-.shelf-items.row1 { top: 10px; }
-.shelf-items.row2 { top: 62px; }
+.shelf-items.row1 { top: 2px; height: 54px; }
+.shelf-items.row2 { top: 66px; height: 48px; }
 
 .book {
     width: 14px;
@@ -635,7 +838,7 @@ const selectTicket = (ticket) => {
     transform: translateX(-50%);
     width: 280px;
     height: 390px;
-    z-index: 13;
+    z-index: 11;
 }
 
 .char-svg {
@@ -645,9 +848,13 @@ const selectTicket = (ticket) => {
     cursor: pointer;
 }
 
-.head-g, .arm-r, .forearm-r, .mouth, .eye-l, .eye-r, .brow-l, .brow-r {
+.head-g, .hand-l, .hand-r, .mouth, .eye-l, .eye-r, .brow-l, .brow-r {
     transform-box: fill-box;
     transform-origin: center;
+}
+
+.hand-l, .hand-r {
+    transition: transform 0.3s ease;
 }
 
 /* Bulle */
@@ -703,14 +910,12 @@ const selectTicket = (ticket) => {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%) scale(0.95);
-    width: min(380px, 90vw);
-    max-height: 80vh;
-    overflow-y: auto;
+    width: min(700px, 92vw);
     background: var(--menu);
     border: 3px solid var(--menu-border);
     border-radius: 18px;
     box-shadow: 0 14px 28px rgba(0,0,0,.25);
-    padding: 16px;
+    padding: 24px;
     z-index: 100;
     opacity: 0;
     pointer-events: none;
@@ -724,17 +929,23 @@ const selectTicket = (ticket) => {
 }
 
 .menu-title {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     color: #4b2b16;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
     text-align: center;
 }
 
 .menu-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 500px) {
+    .menu-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .menu-btn {
@@ -781,6 +992,44 @@ const selectTicket = (ticket) => {
     margin-top: 4px;
 }
 
+.category-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    gap: 8px;
+}
+
+.category-icon {
+    font-size: 36px;
+}
+
+.category-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #4a2b15;
+}
+
+.back-btn {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: none;
+    border: none;
+    color: #4a2b15;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.back-btn:hover {
+    background: var(--menu-hover);
+}
+
 .menu-overlay {
     position: fixed;
     inset: 0;
@@ -819,10 +1068,13 @@ const selectTicket = (ticket) => {
 .anim-idle .eye-l, .anim-idle .eye-r { animation: idleBlink 4.5s 1.2s infinite; }
 
 .anim-greet .head-g { animation: greetHead 1.9s ease-in-out 1; }
-.anim-greet .arm-r { animation: greetArm .28s ease-out forwards, greetWave .45s ease-in-out .28s 3; }
-.anim-greet .forearm-r { animation: greetForearm .45s ease-in-out .28s 3; }
+.anim-greet .hand-r { animation: handWave 0.4s ease-in-out 4; }
 .anim-greet .mouth { animation: greetSmile .3s ease-in-out 5; }
 .anim-greet .eye-l, .anim-greet .eye-r { animation: idleBlink 1.1s infinite; }
+
+/* Animation idle pour les mains */
+.anim-idle .hand-l { animation: handFloat 2.5s ease-in-out infinite; }
+.anim-idle .hand-r { animation: handFloat 2.5s ease-in-out infinite 0.3s; }
 
 @keyframes idleHead {
     0%, 100% { transform: translateY(0); }
@@ -850,19 +1102,16 @@ const selectTicket = (ticket) => {
     60% { transform: translateY(1px); }
 }
 
-@keyframes greetArm {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(-44deg); }
+@keyframes handWave {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-55px) rotate(-15deg); }
+    50% { transform: translateY(-50px) rotate(15deg); }
+    75% { transform: translateY(-55px) rotate(-10deg); }
 }
 
-@keyframes greetWave {
-    0%, 100% { transform: rotate(-44deg); }
-    50% { transform: rotate(-22deg); }
-}
-
-@keyframes greetForearm {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(-28deg); }
+@keyframes handFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(5px); }
 }
 
 @keyframes greetSmile {
