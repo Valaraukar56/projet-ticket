@@ -4,7 +4,7 @@
         <WelcomeDoor v-if="!doorOpened" @open="openDoor" />
 
         <!-- Lobby avec le bonhomme hôte -->
-        <Lobby v-else :balance="balance" @buy-ticket="buyTicket" />
+        <Lobby v-else :balance="balance" @buy-ticket="handleBuyTicket" />
 
         <!-- Modal ticket à gratter -->
         <ScratchTicket
@@ -12,6 +12,13 @@
             :ticket="currentTicket"
             @close="closeTicket"
             @result="handleResult"
+        />
+
+        <!-- Confirmation YOLO -->
+        <YoloConfirm
+            v-if="showYoloConfirm"
+            @confirm="confirmYolo"
+            @cancel="cancelYolo"
         />
 
         <!-- Chaos Windows si YOLO perdu -->
@@ -27,26 +34,53 @@ import { ref } from 'vue';
 import WelcomeDoor from './components/WelcomeDoor.vue';
 import Lobby from './components/Lobby.vue';
 import ScratchTicket from './components/ScratchTicket.vue';
+import YoloConfirm from './components/YoloConfirm.vue';
 import WindowsError from './components/WindowsError.vue';
 
 const doorOpened = ref(false);
 const balance = ref(100);
 const currentTicket = ref(null);
 const showChaos = ref(false);
+const showYoloConfirm = ref(false);
+const pendingYoloTicket = ref(null);
 
 const openDoor = () => {
     doorOpened.value = true;
 };
 
-const buyTicket = (ticketType) => {
-    if (balance.value >= ticketType.price) {
-        balance.value -= ticketType.price;
-        currentTicket.value = {
-            ...ticketType,
-            scratchedPercentage: 0,
-            result: null,
-        };
+const handleBuyTicket = (ticketType) => {
+    if (balance.value < ticketType.price) return;
+
+    // Si c'est un ticket YOLO, demander confirmation
+    if (ticketType.cursed) {
+        pendingYoloTicket.value = ticketType;
+        showYoloConfirm.value = true;
+        return;
     }
+
+    buyTicket(ticketType);
+};
+
+const confirmYolo = () => {
+    showYoloConfirm.value = false;
+    if (pendingYoloTicket.value) {
+        buyTicket(pendingYoloTicket.value);
+        pendingYoloTicket.value = null;
+    }
+};
+
+const cancelYolo = () => {
+    showYoloConfirm.value = false;
+    pendingYoloTicket.value = null;
+};
+
+const buyTicket = (ticketType) => {
+    balance.value -= ticketType.price;
+    currentTicket.value = {
+        ...ticketType,
+        scratchedPercentage: 0,
+        result: null,
+    };
 };
 
 const closeTicket = () => {
