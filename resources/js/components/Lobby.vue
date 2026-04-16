@@ -73,10 +73,10 @@ const showTickets = ref(false);
 const animatedBalance = ref(props.balance);
 
 const ticketTypes = [
-    { id: 1, name: 'Prudent', price: 500, lossPercentage: 30, baseGain: 650, jackpotGain: 1500, color: '#4ade80' },
-    { id: 2, name: 'Equilibre', price: 1000, lossPercentage: 50, baseGain: 1300, jackpotGain: 4000, color: '#fbbf24' },
-    { id: 3, name: 'Risque', price: 1500, lossPercentage: 70, baseGain: 2000, jackpotGain: 8000, color: '#f87171' },
-    { id: 4, name: 'YOLO', price: 3000, lossPercentage: 90, baseGain: 4500, jackpotGain: 30000, color: '#a855f7' },
+    { id: 1, name: 'Prudent', price: 2, lossPercentage: 30, baseGain: 3, jackpotGain: 15, color: '#4ade80' },
+    { id: 2, name: 'Equilibre', price: 5, lossPercentage: 50, baseGain: 8, jackpotGain: 50, color: '#fbbf24' },
+    { id: 3, name: 'Risque', price: 10, lossPercentage: 70, baseGain: 18, jackpotGain: 200, color: '#f87171' },
+    { id: 4, name: 'YOLO', price: 20, lossPercentage: 90, baseGain: 40, jackpotGain: 1000, color: '#a855f7' },
 ];
 
 watch(() => props.balance, (newVal) => {

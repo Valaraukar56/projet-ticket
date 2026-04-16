@@ -23,7 +23,7 @@ import Lobby from './components/Lobby.vue';
 import ScratchTicket from './components/ScratchTicket.vue';
 
 const doorOpened = ref(false);
-const balance = ref(1000);
+const balance = ref(100);
 const currentTicket = ref(null);
 
 const openDoor = () => {
