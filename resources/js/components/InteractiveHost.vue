@@ -206,28 +206,28 @@ const categoryMeta = {
 // Tickets par catégorie (chargés depuis le backend)
 const ticketsByCategory = ref({
     metro: [
-        { id: 'm1', name: 'Étoile Filante', price: 1, lossPercentage: 20, baseGain: 2, jackpotGain: 5 },
-        { id: 'm2', name: 'Constellation', price: 2, lossPercentage: 25, baseGain: 3, jackpotGain: 8 },
-        { id: 'm3', name: 'Galaxie', price: 3, lossPercentage: 30, baseGain: 5, jackpotGain: 12 },
-        { id: 'm4', name: 'Cosmos', price: 5, lossPercentage: 35, baseGain: 8, jackpotGain: 20 },
+        { id: 'm1', name: 'Étoile Filante', price: 1, lossPercentage: 20, baseGain: 2, jackpotGain: 5, theme: 'astro', color: '#4ade80' },
+        { id: 'm2', name: 'Constellation', price: 2, lossPercentage: 25, baseGain: 3, jackpotGain: 8, theme: 'astro', color: '#4ade80' },
+        { id: 'm3', name: 'Galaxie', price: 3, lossPercentage: 30, baseGain: 5, jackpotGain: 12, theme: 'astro', color: '#4ade80' },
+        { id: 'm4', name: 'Cosmos', price: 5, lossPercentage: 35, baseGain: 8, jackpotGain: 20, theme: 'astro', color: '#4ade80' },
     ],
     bus: [
-        { id: 'b1', name: 'Petit Cash', price: 2, lossPercentage: 30, baseGain: 3, jackpotGain: 10 },
-        { id: 'b2', name: 'Cash Express', price: 4, lossPercentage: 35, baseGain: 6, jackpotGain: 18 },
-        { id: 'b3', name: 'Banco', price: 6, lossPercentage: 40, baseGain: 10, jackpotGain: 30 },
-        { id: 'b4', name: 'Mega Cash', price: 10, lossPercentage: 45, baseGain: 18, jackpotGain: 50 },
+        { id: 'b1', name: 'Petit Cash', price: 2, lossPercentage: 30, baseGain: 3, jackpotGain: 10, theme: 'cash', color: '#60a5fa' },
+        { id: 'b2', name: 'Cash Express', price: 4, lossPercentage: 35, baseGain: 6, jackpotGain: 18, theme: 'cash', color: '#60a5fa' },
+        { id: 'b3', name: 'Banco', price: 6, lossPercentage: 40, baseGain: 10, jackpotGain: 30, theme: 'cash', color: '#60a5fa' },
+        { id: 'b4', name: 'Mega Cash', price: 10, lossPercentage: 45, baseGain: 18, jackpotGain: 50, theme: 'cash', color: '#60a5fa' },
     ],
     train: [
-        { id: 't1', name: 'Pépite', price: 5, lossPercentage: 45, baseGain: 8, jackpotGain: 30 },
-        { id: 't2', name: 'Lingot', price: 10, lossPercentage: 50, baseGain: 18, jackpotGain: 80 },
-        { id: 't3', name: 'Trésor', price: 15, lossPercentage: 55, baseGain: 28, jackpotGain: 150 },
-        { id: 't4', name: 'El Dorado', price: 25, lossPercentage: 60, baseGain: 50, jackpotGain: 300 },
+        { id: 't1', name: 'Pépite', price: 5, lossPercentage: 45, baseGain: 8, jackpotGain: 30, theme: 'gold', color: '#fbbf24' },
+        { id: 't2', name: 'Lingot', price: 10, lossPercentage: 50, baseGain: 18, jackpotGain: 80, theme: 'gold', color: '#fbbf24' },
+        { id: 't3', name: 'Trésor', price: 15, lossPercentage: 55, baseGain: 28, jackpotGain: 150, theme: 'gold', color: '#fbbf24' },
+        { id: 't4', name: 'El Dorado', price: 25, lossPercentage: 60, baseGain: 50, jackpotGain: 300, theme: 'gold', color: '#fbbf24' },
     ],
     loterie: [
-        { id: 'l1', name: 'Vegas Night', price: 5, lossPercentage: 70, baseGain: 15, jackpotGain: 100 },
-        { id: 'l2', name: 'High Roller', price: 10, lossPercentage: 75, baseGain: 35, jackpotGain: 500 },
-        { id: 'l3', name: 'Royal Flush', price: 20, lossPercentage: 85, baseGain: 100, jackpotGain: 2000 },
-        { id: 'l4', name: 'YOLO', price: 50, lossPercentage: 90, baseGain: 5000, jackpotGain: 10000, cursed: true },
+        { id: 'l1', name: 'Vegas Night', price: 5, lossPercentage: 70, baseGain: 15, jackpotGain: 100, theme: 'vegas', color: '#a855f7' },
+        { id: 'l2', name: 'High Roller', price: 10, lossPercentage: 75, baseGain: 35, jackpotGain: 500, theme: 'vegas', color: '#a855f7' },
+        { id: 'l3', name: 'Royal Flush', price: 20, lossPercentage: 85, baseGain: 100, jackpotGain: 2000, theme: 'vegas', color: '#a855f7' },
+        { id: 'l4', name: 'YOLO', price: 50, lossPercentage: 90, baseGain: 5000, jackpotGain: 10000, cursed: true, theme: 'vegas', color: '#ef4444' },
     ],
 });
 
