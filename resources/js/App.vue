@@ -49,9 +49,11 @@ const handleResult = (result) => {
     if (result.won) {
         balance.value += result.amount;
     }
+    // Plus de temps pour admirer le jackpot
+    const delay = result.jackpot ? 3500 : 2000;
     setTimeout(() => {
         currentTicket.value = null;
-    }, 2000);
+    }, delay);
 };
 </script>
 
