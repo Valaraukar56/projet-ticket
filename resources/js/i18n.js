@@ -1,11 +1,11 @@
-import { inject } from 'vue';
+import { inject, ref } from 'vue';
 import en from './locales/en.js';
 import fr from './locales/fr.js';
 
 const locales = { en, fr };
 
 export function useI18n() {
-    const locale = inject('locale');
+    const locale = inject('locale', ref(typeof localStorage !== 'undefined' ? (localStorage.getItem('locale') ?? 'fr') : 'fr'));
 
     const t = (key) => {
         const keys = key.split('.');
