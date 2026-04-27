@@ -49,6 +49,9 @@
             <button class="leaderboard-btn" @click="$emit('show-leaderboard')" title="Classement">
                 🏆
             </button>
+            <button class="chat-btn" @click="$emit('show-chat')" title="Chat Global">
+                💬
+            </button>
             <button v-if="isAdmin" class="admin-btn" @click="$emit('show-admin')" title="Panel Admin">
                 🛠️
             </button>
@@ -185,7 +188,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['buy-ticket', 'show-leaderboard', 'show-admin', 'logout']);
+const emit = defineEmits(['buy-ticket', 'show-leaderboard', 'show-chat', 'show-admin', 'logout']);
 
 // Catégories de tickets
 const categories = [
@@ -234,7 +237,7 @@ const ticketsByCategory = ref({
 // Charger les tickets depuis le backend
 const loadTicketSettings = async () => {
     try {
-        const response = await fetch('/api/admin/tickets');
+        const response = await fetch('/api/admin/tickets', { credentials: 'same-origin' });
         if (response.ok) {
             const data = await response.json();
             if (data.tickets) {
@@ -412,6 +415,8 @@ const selectTicket = (ticket) => {
     top: 20px;
     left: 20px;
     z-index: 50;
+    display: flex;
+    gap: 10px;
 }
 
 .leaderboard-btn {
@@ -432,6 +437,26 @@ const selectTicket = (ticket) => {
 .leaderboard-btn:hover {
     transform: scale(1.1);
     box-shadow: 0 8px 30px rgba(255, 215, 0, 0.6);
+}
+
+.chat-btn {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+    border: 3px solid #16a34a;
+    font-size: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 5px 20px rgba(74, 222, 128, 0.4);
+    transition: all 0.2s;
+}
+
+.chat-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 30px rgba(74, 222, 128, 0.6);
 }
 
 .admin-btn {

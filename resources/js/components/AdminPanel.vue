@@ -195,7 +195,7 @@ const getCategoryName = (category) => {
 
 const fetchStats = async () => {
     try {
-        const response = await fetch('/api/admin/stats');
+        const response = await fetch('/api/admin/stats', { credentials: 'same-origin' });
         const data = await response.json();
         stats.value = data;
     } catch (e) {
@@ -206,7 +206,7 @@ const fetchStats = async () => {
 const fetchUsers = async () => {
     loadingUsers.value = true;
     try {
-        const response = await fetch('/api/admin/users');
+        const response = await fetch('/api/admin/users', { credentials: 'same-origin' });
         const data = await response.json();
         users.value = data.users;
     } catch (e) {
@@ -219,7 +219,7 @@ const fetchUsers = async () => {
 const fetchTicketSettings = async () => {
     loadingTickets.value = true;
     try {
-        const response = await fetch('/api/admin/tickets');
+        const response = await fetch('/api/admin/tickets', { credentials: 'same-origin' });
         const data = await response.json();
         slotSettings.value = data.slots;
         ticketSettings.value = data.tickets;
@@ -238,6 +238,7 @@ const updateBalance = async (user) => {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': getCSRFToken(),
             },
+            credentials: 'same-origin',
             body: JSON.stringify({ balance: user.balance }),
         });
     } catch (e) {
@@ -254,6 +255,7 @@ const deleteUser = async (user) => {
             headers: {
                 'X-CSRF-TOKEN': getCSRFToken(),
             },
+            credentials: 'same-origin',
         });
         users.value = users.value.filter(u => u.id !== user.id);
     } catch (e) {
@@ -270,6 +272,7 @@ const saveTicketSettings = async () => {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': getCSRFToken(),
             },
+            credentials: 'same-origin',
             body: JSON.stringify({
                 slots: slotSettings.value,
                 tickets: ticketSettings.value,

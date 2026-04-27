@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CasinoController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\LeaderboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +19,15 @@ Route::prefix('api')->group(function () {
 
     // Classement
     Route::get('/leaderboard', [LeaderboardController::class, 'index']);
+
+    // Casino Tycoon
+    Route::get('/casino', [CasinoController::class, 'get']);
+    Route::post('/casino', [CasinoController::class, 'save']);
+    Route::post('/casino/unlock', [CasinoController::class, 'unlock']);
+
+    // Chat
+    Route::get('/chat', [ChatController::class, 'index']);
+    Route::post('/chat', [ChatController::class, 'store']);
 
     // Admin
     Route::prefix('admin')->group(function () {

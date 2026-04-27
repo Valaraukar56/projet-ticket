@@ -65,7 +65,7 @@ const loading = ref(true);
 const fetchLeaderboard = async () => {
     loading.value = true;
     try {
-        const response = await fetch('/api/leaderboard');
+        const response = await fetch('/api/leaderboard', { credentials: 'same-origin' });
         const data = await response.json();
         players.value = data.leaderboard;
     } catch (e) {

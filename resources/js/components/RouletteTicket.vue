@@ -155,7 +155,7 @@ const slotSettings = ref({
 // Charger les paramètres depuis le backend
 const loadSettings = async () => {
     try {
-        const response = await fetch('/api/admin/tickets');
+        const response = await fetch('/api/admin/tickets', { credentials: 'same-origin' });
         if (response.ok) {
             const data = await response.json();
             slotSettings.value = data.settings;

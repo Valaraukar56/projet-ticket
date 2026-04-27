@@ -5,7 +5,7 @@ echo "🚀 Démarrage de l'application Ticket Scratch..."
 
 # Attendre que MySQL soit prêt
 echo "⏳ Attente de MySQL..."
-while ! mysqladmin ping -h"$DB_HOST" -u"$DB_USERNAME" -p"$DB_PASSWORD" --silent 2>/dev/null; do
+while ! mysqladmin ping -h"$DB_HOST" -u"$DB_USERNAME" -p"$DB_PASSWORD" --ssl-mode=DISABLED --silent 2>/dev/null; do
     sleep 2
 done
 echo "✅ MySQL est prêt!"

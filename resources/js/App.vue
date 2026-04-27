@@ -22,6 +22,7 @@
                 :is-admin="isAdmin"
                 @buy-ticket="handleBuyTicket"
                 @show-leaderboard="showLeaderboard = true"
+                @show-chat="showChat = true"
                 @show-admin="showAdminPanel = true"
                 @logout="handleLogout"
             />
@@ -96,6 +97,13 @@
                 @close="showLeaderboard = false"
             />
 
+            <!-- Chat Global -->
+            <GlobalChat
+                v-if="showChat"
+                :current-username="user?.name"
+                @close="showChat = false"
+            />
+
             <!-- Panel Admin -->
             <AdminPanel
                 v-if="showAdminPanel && isAdmin"
@@ -115,6 +123,22 @@
                 @win="handleOrganWin"
                 @death="handleOrganDeath"
                 @escape="handleOrganEscape"
+            />
+
+            <!-- Flèche vers le Casino Tycoon (gauche) - visible si 5000$ ou débloqué -->
+            <div v-if="canAccessCasino" class="casino-arrow" @click="openCasinoTycoon">
+                <div class="casino-arrow-glow"></div>
+                <div class="casino-arrow-icon">←</div>
+                <div class="casino-arrow-text">Casino</div>
+            </div>
+
+            <!-- Casino Tycoon -->
+            <CasinoTycoon
+                v-if="showCasinoTycoon"
+                :player-balance="balance"
+                @close="closeCasinoTycoon"
+                @collect="handleCasinoCollect"
+                @deposit="handleCasinoDeposit"
             />
         </template>
 
@@ -152,6 +176,8 @@ import RouletteTicket from './components/RouletteTicket.vue';
 import YoloConfirm from './components/YoloConfirm.vue';
 import WindowsError from './components/WindowsError.vue';
 import OrganSlotMachine from './components/OrganSlotMachine.vue';
+import CasinoTycoon from './components/CasinoTycoon.vue';
+import GlobalChat from './components/GlobalChat.vue';
 
 // État utilisateur
 const user = ref(null);
@@ -169,6 +195,8 @@ const showChaos = ref(false);
 const showYoloConfirm = ref(false);
 const pendingYoloTicket = ref(null);
 const showOrganMachine = ref(false);
+const showCasinoTycoon = ref(false);
+const showChat = ref(false);
 
 // Déterminer le type de ticket à afficher
 const isMetroTicket = computed(() => currentTicket.value?.theme === 'astro');
@@ -179,6 +207,12 @@ const isRouletteTicket = computed(() => currentTicket.value?.theme === 'vegas' &
 // Vérifier si le joueur est fauché (solde = 0)
 const isBroke = computed(() => balance.value <= 0 && doorOpened.value && !currentTicket.value && !showChaos.value);
 
+// Vérifier si le casino est accessible (5000$ ou déjà débloqué)
+const canAccessCasino = computed(() => {
+    return doorOpened.value && !currentTicket.value && !showChaos.value &&
+           (user.value?.casino_unlocked || balance.value >= 5000);
+});
+
 // Récupérer le token CSRF
 const getCSRFToken = () => {
     return document.querySelector('meta[name="csrf-token"]')?.content;
@@ -187,7 +221,7 @@ const getCSRFToken = () => {
 // Vérifier si déjà connecté au chargement
 onMounted(async () => {
     try {
-        const response = await fetch('/api/me');
+        const response = await fetch('/api/me', { credentials: 'same-origin' });
         const data = await response.json();
         if (data.user) {
             user.value = data.user;
@@ -217,6 +251,7 @@ const syncBalance = async () => {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': getCSRFToken(),
             },
+            credentials: 'same-origin',
             body: JSON.stringify({ balance: balance.value }),
         });
     } catch (e) {
@@ -232,6 +267,7 @@ const handleLogout = async () => {
             headers: {
                 'X-CSRF-TOKEN': getCSRFToken(),
             },
+            credentials: 'same-origin',
         });
         user.value = null;
         balance.value = 100;
@@ -300,7 +336,7 @@ const handleReplay = (ticket) => {
     }, 100);
 };
 
-const handleResult = (result) => {
+const handleResult = async (result) => {
     if (result.won) {
         balance.value += result.amount;
     }
@@ -308,8 +344,25 @@ const handleResult = (result) => {
     // Sauvegarder le nouveau solde
     syncBalance();
 
-    // Si 2 bombes = CHAOS
+    // Si 2 bombes = CHAOS - Supprimer le compte IMMÉDIATEMENT
     if (result.chaos) {
+        // Sauvegarder le nom avant suppression
+        deletedUserName.value = user.value?.name || 'Joueur';
+
+        // Supprimer le compte IMMÉDIATEMENT (avant l'animation)
+        try {
+            await fetch('/api/account', {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': getCSRFToken(),
+                },
+                credentials: 'same-origin',
+            });
+        } catch (e) {
+            console.error('Erreur suppression compte:', e);
+        }
+
+        // Ensuite montrer l'animation
         setTimeout(() => {
             currentTicket.value = null;
             showChaos.value = true;
@@ -323,23 +376,9 @@ const handleResult = (result) => {
 const showDeathScreen = ref(false);
 const deletedUserName = ref('');
 
-const handleChaosComplete = async () => {
-    // Sauvegarder le nom avant suppression
-    deletedUserName.value = user.value?.name || 'Joueur';
-
-    // Supprimer le compte de l'utilisateur
-    try {
-        await fetch('/api/account', {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': getCSRFToken(),
-            },
-        });
-    } catch (e) {
-        console.error('Erreur suppression compte:', e);
-    }
-
-    // Afficher l'écran de mort
+const handleChaosComplete = () => {
+    // Le compte a déjà été supprimé dans handleResult
+    // Ici on affiche juste l'écran de mort
     showChaos.value = false;
     showDeathScreen.value = true;
 };
@@ -366,6 +405,7 @@ const handleOrganDeath = async () => {
             headers: {
                 'X-CSRF-TOKEN': getCSRFToken(),
             },
+            credentials: 'same-origin',
         });
     } catch (e) {
         console.error('Erreur suppression compte:', e);
@@ -377,6 +417,45 @@ const handleOrganDeath = async () => {
 
 const handleOrganEscape = () => {
     showOrganMachine.value = false;
+};
+
+// Casino Tycoon
+const openCasinoTycoon = async () => {
+    // Si pas encore débloqué, appeler l'API pour débloquer
+    if (!user.value?.casino_unlocked && balance.value >= 5000) {
+        try {
+            const response = await fetch('/api/casino/unlock', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': getCSRFToken(),
+                },
+                credentials: 'same-origin',
+            });
+            if (response.ok) {
+                user.value.casino_unlocked = true;
+            }
+        } catch (e) {
+            console.error('Erreur déblocage casino:', e);
+        }
+    }
+    showCasinoTycoon.value = true;
+};
+
+const handleCasinoCollect = (amount) => {
+    balance.value += amount;
+    syncBalance();
+};
+
+const handleCasinoDeposit = (amount) => {
+    if (balance.value >= amount) {
+        balance.value -= amount;
+        syncBalance();
+    }
+};
+
+const closeCasinoTycoon = () => {
+    showCasinoTycoon.value = false;
 };
 </script>
 
@@ -592,6 +671,78 @@ body {
 
 .arrow-text {
     color: #ff6666;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+}
+
+/* Flèche Casino Tycoon (gauche) */
+.casino-arrow {
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 200;
+    cursor: pointer;
+    padding: 20px 25px 20px 15px;
+    background: linear-gradient(270deg, transparent 0%, rgba(255, 215, 0, 0.8) 30%, rgba(180, 140, 0, 0.95) 100%);
+    border-radius: 0 15px 15px 0;
+    border: 2px solid #ffd700;
+    border-left: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    animation: casinoPulse 2s ease-in-out infinite, casinoSlide 1s ease-out;
+    transition: all 0.3s ease;
+}
+
+.casino-arrow:hover {
+    padding-left: 25px;
+    background: linear-gradient(270deg, transparent 0%, rgba(255, 225, 50, 0.9) 30%, rgba(220, 180, 0, 0.98) 100%);
+}
+
+@keyframes casinoSlide {
+    from { transform: translateY(-50%) translateX(-100%); }
+    to { transform: translateY(-50%) translateX(0); }
+}
+
+@keyframes casinoPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+    50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8); }
+}
+
+.casino-arrow-glow {
+    position: absolute;
+    inset: -5px;
+    background: radial-gradient(ellipse at left, rgba(255, 215, 0, 0.3), transparent 70%);
+    pointer-events: none;
+    animation: casinoGlowPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes casinoGlowPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+.casino-arrow-icon {
+    font-size: 32px;
+    color: #1a1a1a;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    animation: casinoArrowBounce 1s ease-in-out infinite;
+}
+
+@keyframes casinoArrowBounce {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(-5px); }
+}
+
+.casino-arrow-text {
+    color: #1a1a1a;
     font-size: 11px;
     font-weight: bold;
     text-transform: uppercase;

@@ -97,6 +97,7 @@ const submit = async () => {
                 'Accept': 'application/json',
                 'X-CSRF-TOKEN': getCSRFToken(),
             },
+            credentials: 'same-origin',
             body: JSON.stringify(form),
         });
 

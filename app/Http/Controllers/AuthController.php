@@ -44,6 +44,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'balance' => $user->balance,
                 'roles' => $user->getRoleNames(),
+                'casino_unlocked' => $user->casino_unlocked ?? false,
             ],
         ]);
     }
@@ -76,6 +77,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'balance' => $user->balance,
                 'roles' => $user->getRoleNames(),
+                'casino_unlocked' => $user->casino_unlocked ?? false,
             ],
         ]);
     }
@@ -113,6 +115,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'balance' => $user->balance,
                 'roles' => $user->getRoleNames(),
+                'casino_unlocked' => $user->casino_unlocked ?? false,
             ],
         ]);
     }
