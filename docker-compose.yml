@@ -71,6 +71,60 @@ services:
     networks:
       - ticket-network
 
+  # phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: ticket-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: root_password
+    networks:
+      - ticket-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # GLPI
+  glpi:
+    image: diouxx/glpi:latest
+    container_name: ticket-glpi
+    restart: unless-stopped
+    ports:
+      - "8082:80"
+    volumes:
+      - glpi-data:/var/www/html
+    environment:
+      TIMEZONE: Europe/Paris
+    networks:
+      - ticket-network
+    depends_on:
+      glpi-db:
+        condition: service_healthy
+
+  # Base de données MariaDB pour GLPI
+  glpi-db:
+    image: mariadb:10.11
+    container_name: ticket-glpi-db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: glpi_root_password
+      MARIADB_DATABASE: glpi
+      MARIADB_USER: glpi_user
+      MARIADB_PASSWORD: glpi_password
+    volumes:
+      - glpi-db-data:/var/lib/mysql
+    networks:
+      - ticket-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 networks:
   ticket-network:
     driver: bridge
@@ -79,3 +133,5 @@ volumes:
   mysql-data:
   mongodb-data:
   storage-data:
+  glpi-data:
+  glpi-db-data:

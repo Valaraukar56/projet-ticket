@@ -52,6 +52,12 @@
                 >
                     🎫 Tickets
                 </button>
+                <button
+                    :class="{ active: activeTab === 'tools' }"
+                    @click="activeTab = 'tools'"
+                >
+                    🔧 Outils
+                </button>
             </div>
 
             <!-- Users Tab -->
@@ -89,6 +95,28 @@
                             🗑️
                         </button>
                     </div>
+                </div>
+            </div>
+
+            <!-- Tools Tab -->
+            <div v-if="activeTab === 'tools'" class="tab-content">
+                <div class="tools-grid">
+                    <a href="http://localhost:8081" target="_blank" class="tool-card">
+                        <div class="tool-icon">🗄️</div>
+                        <div class="tool-info">
+                            <span class="tool-name">phpMyAdmin</span>
+                            <span class="tool-desc">Gestion base de données MySQL</span>
+                        </div>
+                        <span class="tool-link">localhost:8081</span>
+                    </a>
+                    <a href="http://localhost:8082" target="_blank" class="tool-card">
+                        <div class="tool-icon">🎫</div>
+                        <div class="tool-info">
+                            <span class="tool-name">GLPI</span>
+                            <span class="tool-desc">Gestion des tickets IT</span>
+                        </div>
+                        <span class="tool-link">localhost:8082</span>
+                    </a>
                 </div>
             </div>
 
@@ -728,5 +756,68 @@ onMounted(() => {
 .save-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+/* Tools Grid */
+.tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.tool-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 15px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.tool-card:hover {
+    background: rgba(255, 215, 0, 0.1);
+    border-color: #ffd700;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(255, 215, 0, 0.2);
+}
+
+.tool-icon {
+    font-size: 40px;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: 12px;
+}
+
+.tool-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tool-name {
+    color: #ffd700;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.tool-desc {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+}
+
+.tool-link {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 12px;
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
 }
 </style>
