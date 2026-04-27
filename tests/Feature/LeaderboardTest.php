@@ -20,24 +20,31 @@ class LeaderboardTest extends TestCase
 
     public function test_anyone_can_get_leaderboard(): void
     {
-        User::factory()->count(5)->create();
+        $users = User::factory()->count(5)->create(['balance' => 100]);
+        foreach ($users as $user) {
+            $user->assignRole('joueur');
+        }
 
         $response = $this->getJson('/api/leaderboard');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                '*' => ['id', 'name', 'balance']
+                'leaderboard' => [
+                    '*' => ['id', 'name', 'balance']
+                ]
             ]);
     }
 
     public function test_leaderboard_is_sorted_by_balance_desc(): void
     {
-        User::factory()->create(['name' => 'Riche', 'balance' => 9000]);
-        User::factory()->create(['name' => 'Pauvre', 'balance' => 10]);
+        $riche = User::factory()->create(['name' => 'Riche', 'balance' => 9000]);
+        $riche->assignRole('joueur');
+        $pauvre = User::factory()->create(['name' => 'Pauvre', 'balance' => 10]);
+        $pauvre->assignRole('joueur');
 
         $response = $this->getJson('/api/leaderboard');
 
-        $data = $response->json();
+        $data = $response->json('leaderboard');
 
         $this->assertGreaterThanOrEqual(
             $data[1]['balance'],
@@ -47,11 +54,14 @@ class LeaderboardTest extends TestCase
 
     public function test_leaderboard_returns_max_50_users(): void
     {
-        User::factory()->count(60)->create();
+        $users = User::factory()->count(60)->create(['balance' => 100]);
+        foreach ($users as $user) {
+            $user->assignRole('joueur');
+        }
 
         $response = $this->getJson('/api/leaderboard');
 
         $response->assertStatus(200);
-        $this->assertLessThanOrEqual(50, count($response->json()));
+        $this->assertLessThanOrEqual(50, count($response->json('leaderboard')));
     }
 }

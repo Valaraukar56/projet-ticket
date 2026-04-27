@@ -28,7 +28,9 @@ class AdminTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                '*' => ['id', 'name', 'email', 'balance']
+                'users' => [
+                    '*' => ['id', 'name', 'email', 'balance', 'roles', 'created_at']
+                ]
             ]);
     }
 
@@ -53,8 +55,10 @@ class AdminTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'total_users',
-                'total_balance',
+                'accounts_created',
+                'accounts_destroyed',
+                'active_users',
+                'total_logins',
             ]);
     }
 
@@ -103,6 +107,7 @@ class AdminTest extends TestCase
     {
         $response = $this->getJson('/api/admin/users');
 
-        $response->assertStatus(401);
+        // Le controller retourne 403 car checkAdmin() utilise abort(403)
+        $response->assertStatus(403);
     }
 }
