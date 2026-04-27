@@ -307,12 +307,32 @@ const cancelYolo = () => {
     pendingYoloTicket.value = null;
 };
 
-const buyTicket = (ticketType) => {
+const buyTicket = async (ticketType) => {
     balance.value -= ticketType.price;
-    syncBalance(); // Sauvegarder en BDD
+    syncBalance();
+
+    let ticketId = null;
+    try {
+        const res = await fetch('/api/tickets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCSRFToken() },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                name: ticketType.name,
+                price: ticketType.price,
+                loss_percentage: ticketType.lossPercentage,
+                potential_gain: ticketType.jackpotGain,
+            }),
+        });
+        const data = await res.json();
+        ticketId = data.ticket?.id ?? null;
+    } catch (e) {
+        console.error('Erreur création ticket:', e);
+    }
 
     currentTicket.value = {
         ...ticketType,
+        ticketId,
         scratchedPercentage: 0,
         result: null,
     };
@@ -341,8 +361,21 @@ const handleResult = async (result) => {
         balance.value += result.amount;
     }
 
-    // Sauvegarder le nouveau solde
     syncBalance();
+
+    const ticketId = currentTicket.value?.ticketId;
+    if (ticketId) {
+        try {
+            await fetch(`/api/tickets/${ticketId}/complete`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCSRFToken() },
+                credentials: 'same-origin',
+                body: JSON.stringify({ result: result.won ? 'win' : 'lose' }),
+            });
+        } catch (e) {
+            console.error('Erreur complétion ticket:', e);
+        }
+    }
 
     // Si 2 bombes = CHAOS - Supprimer le compte IMMÉDIATEMENT
     if (result.chaos) {

@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CasinoController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 
 // Auth
@@ -17,6 +18,13 @@ Route::delete('/account', [AuthController::class, 'deleteAccount']);
 
 // Classement
 Route::get('/leaderboard', [LeaderboardController::class, 'index']);
+
+// Tickets API avancée
+Route::post('/tickets', [TicketController::class, 'store']);
+Route::patch('/tickets/{id}/complete', [TicketController::class, 'complete']);
+Route::get('/open-tickets', [TicketController::class, 'openTickets']);
+Route::get('/closed-tickets', [TicketController::class, 'closedTickets']);
+Route::get('/users/{email}/tickets', [TicketController::class, 'ticketsByUser']);
 
 // Casino Tycoon
 Route::get('/casino', [CasinoController::class, 'get']);

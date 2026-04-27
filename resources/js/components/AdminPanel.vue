@@ -53,6 +53,12 @@
                     🎫 Tickets
                 </button>
                 <button
+                    :class="{ active: activeTab === 'suivi' }"
+                    @click="activeTab = 'suivi'; fetchOpenTickets(); fetchClosedTickets()"
+                >
+                    📊 Suivi Tickets
+                </button>
+                <button
                     :class="{ active: activeTab === 'tools' }"
                     @click="activeTab = 'tools'"
                 >
@@ -117,6 +123,113 @@
                         </div>
                         <span class="tool-link">localhost:8082</span>
                     </a>
+                </div>
+            </div>
+
+            <!-- Suivi Tickets Tab -->
+            <div v-if="activeTab === 'suivi'" class="tab-content">
+                <!-- Recherche par email -->
+                <div class="suivi-section">
+                    <h3 class="section-title">🔍 Tickets par utilisateur</h3>
+                    <div class="search-bar">
+                        <input
+                            v-model="searchEmail"
+                            type="email"
+                            placeholder="Email de l'utilisateur..."
+                            @keyup.enter="fetchTicketsByEmail"
+                        />
+                        <button @click="fetchTicketsByEmail" :disabled="!searchEmail">Rechercher</button>
+                    </div>
+                    <div v-if="searchError" class="search-error">{{ searchError }}</div>
+                    <div v-if="searchResult" class="search-result">
+                        <div class="search-user-info">
+                            <span class="search-user-name">{{ searchResult.user.name }}</span>
+                            <span class="search-user-email">{{ searchResult.user.email }}</span>
+                        </div>
+                        <div v-if="searchResult.tickets.length === 0" class="no-data">Aucun ticket</div>
+                        <div v-else class="ticket-table-wrap">
+                            <table class="ticket-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nom</th>
+                                        <th>Statut</th>
+                                        <th>Résultat</th>
+                                        <th>Prix</th>
+                                        <th>Gain potentiel</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="t in searchResult.tickets" :key="t.id">
+                                        <td>{{ t.name }}</td>
+                                        <td><span :class="'badge badge-' + t.status">{{ t.status }}</span></td>
+                                        <td>{{ t.result ?? '—' }}</td>
+                                        <td>{{ t.price }} $</td>
+                                        <td>{{ t.potential_gain }} $</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tickets ouverts -->
+                <div class="suivi-section">
+                    <h3 class="section-title">🟡 Tickets ouverts <span class="count-badge">{{ openTickets.length }}</span></h3>
+                    <div v-if="loadingOpen" class="loading">Chargement...</div>
+                    <div v-else-if="openTickets.length === 0" class="no-data">Aucun ticket ouvert</div>
+                    <div v-else class="ticket-table-wrap">
+                        <table class="ticket-table">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Utilisateur</th>
+                                    <th>Statut</th>
+                                    <th>Prix</th>
+                                    <th>Gain potentiel</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="t in openTickets" :key="t.id">
+                                    <td>{{ t.name }}</td>
+                                    <td>{{ t.user?.name ?? '—' }}</td>
+                                    <td><span :class="'badge badge-' + t.status">{{ t.status }}</span></td>
+                                    <td>{{ t.price }} $</td>
+                                    <td>{{ t.potential_gain }} $</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tickets fermés -->
+                <div class="suivi-section">
+                    <h3 class="section-title">✅ Tickets fermés <span class="count-badge">{{ closedTickets.length }}</span></h3>
+                    <div v-if="loadingClosed" class="loading">Chargement...</div>
+                    <div v-else-if="closedTickets.length === 0" class="no-data">Aucun ticket fermé</div>
+                    <div v-else class="ticket-table-wrap">
+                        <table class="ticket-table">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Utilisateur</th>
+                                    <th>Résultat</th>
+                                    <th>Prix</th>
+                                    <th>Gain potentiel</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="t in closedTickets" :key="t.id">
+                                    <td>{{ t.name }}</td>
+                                    <td>{{ t.user?.name ?? '—' }}</td>
+                                    <td>
+                                        <span :class="'badge badge-' + t.result">{{ t.result }}</span>
+                                    </td>
+                                    <td>{{ t.price }} $</td>
+                                    <td>{{ t.potential_gain }} $</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -206,6 +319,15 @@ const stats = ref({
     active_users: 0,
     total_logins: 0,
 });
+
+// Suivi tickets
+const openTickets = ref([]);
+const closedTickets = ref([]);
+const loadingOpen = ref(false);
+const loadingClosed = ref(false);
+const searchEmail = ref('');
+const searchResult = ref(null);
+const searchError = ref('');
 
 const getCSRFToken = () => {
     return document.querySelector('meta[name="csrf-token"]')?.content;
@@ -311,6 +433,48 @@ const saveTicketSettings = async () => {
         console.error('Erreur save tickets:', e);
     } finally {
         savingTickets.value = false;
+    }
+};
+
+const fetchOpenTickets = async () => {
+    loadingOpen.value = true;
+    try {
+        const res = await fetch('/api/open-tickets', { credentials: 'same-origin' });
+        const data = await res.json();
+        openTickets.value = data.tickets;
+    } catch (e) {
+        console.error('Erreur open-tickets:', e);
+    } finally {
+        loadingOpen.value = false;
+    }
+};
+
+const fetchClosedTickets = async () => {
+    loadingClosed.value = true;
+    try {
+        const res = await fetch('/api/closed-tickets', { credentials: 'same-origin' });
+        const data = await res.json();
+        closedTickets.value = data.tickets;
+    } catch (e) {
+        console.error('Erreur closed-tickets:', e);
+    } finally {
+        loadingClosed.value = false;
+    }
+};
+
+const fetchTicketsByEmail = async () => {
+    searchResult.value = null;
+    searchError.value = '';
+    try {
+        const res = await fetch(`/api/users/${encodeURIComponent(searchEmail.value)}/tickets`, { credentials: 'same-origin' });
+        if (res.status === 404) {
+            searchError.value = 'Aucun utilisateur trouvé avec cet email.';
+            return;
+        }
+        const data = await res.json();
+        searchResult.value = data;
+    } catch (e) {
+        searchError.value = 'Erreur lors de la recherche.';
     }
 };
 
@@ -820,4 +984,136 @@ onMounted(() => {
     background: rgba(0, 0, 0, 0.3);
     border-radius: 6px;
 }
+
+/* Suivi Tickets */
+.suivi-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.count-badge {
+    background: rgba(255, 215, 0, 0.2);
+    color: #ffd700;
+    font-size: 13px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    margin-left: 8px;
+    font-weight: normal;
+}
+
+.search-bar {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.search-bar input {
+    flex: 1;
+    padding: 10px 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+}
+
+.search-bar input:focus {
+    outline: none;
+    border-color: #ffd700;
+}
+
+.search-bar button {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #ffd700, #ffaa00);
+    border: none;
+    border-radius: 10px;
+    color: #1a1a2e;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.search-bar button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.search-error {
+    color: #ff6666;
+    font-size: 13px;
+    padding: 8px 0;
+}
+
+.search-user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 10px 15px;
+    background: rgba(255, 215, 0, 0.08);
+    border-radius: 8px;
+}
+
+.search-user-name {
+    color: #ffd700;
+    font-weight: 600;
+}
+
+.search-user-email {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 13px;
+}
+
+.no-data {
+    color: rgba(255, 255, 255, 0.3);
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+.ticket-table-wrap {
+    overflow-x: auto;
+}
+
+.ticket-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.ticket-table th {
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 600;
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+}
+
+.ticket-table td {
+    color: white;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ticket-table tr:last-child td {
+    border-bottom: none;
+}
+
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-purchased { background: rgba(100, 180, 255, 0.2); color: #64b4ff; }
+.badge-scratching { background: rgba(255, 180, 0, 0.2); color: #ffb400; }
+.badge-completed { background: rgba(100, 220, 100, 0.2); color: #64dc64; }
+.badge-available { background: rgba(255, 255, 255, 0.1); color: rgba(255,255,255,0.5); }
+.badge-win { background: rgba(100, 220, 100, 0.2); color: #64dc64; }
+.badge-lose { background: rgba(255, 80, 80, 0.2); color: #ff5050; }
 </style>
