@@ -2,8 +2,8 @@
     <div class="confirm-overlay">
         <div class="confirm-modal">
             <div class="confirm-icon">⚠️</div>
-            <h2>ATTENTION</h2>
-            <p class="warning-text">Tu es sur le point d'acheter un ticket <span class="yolo-text">YOLO</span></p>
+            <h2>{{ t('yolo.warning') }}</h2>
+            <p class="warning-text">{{ t('yolo.aboutToBuy') }} <span class="yolo-text">YOLO</span></p>
 
             <div class="info-box">
                 <p>✅ 2 icônes = <strong>1 000$</strong></p>
@@ -11,12 +11,12 @@
                 <p class="danger">❌ Perte = <strong>CHAOS TOTAL</strong></p>
             </div>
 
-            <p class="small-text">90% de chances de déclencher l'apocalypse sur ton écran.</p>
-            <p class="small-text">On t'aura prévenu...</p>
+            <p class="small-text">{{ t('yolo.text1') }}</p>
+            <p class="small-text">{{ t('yolo.text2') }}</p>
 
             <div class="confirm-buttons">
                 <button class="btn-cancel" @click="$emit('cancel')">
-                    Non, j'ai peur
+                    {{ t('yolo.cancel') }}
                 </button>
                 <button class="btn-confirm" @click="$emit('confirm')">
                     YOLO 🔥
@@ -27,7 +27,10 @@
 </template>
 
 <script setup>
+import { useI18n } from '../i18n.js';
+
 defineEmits(['confirm', 'cancel']);
+const { t } = useI18n();
 </script>
 
 <style scoped>

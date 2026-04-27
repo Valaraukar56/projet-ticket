@@ -5,16 +5,19 @@
                 <div class="door-handle"></div>
                 <div class="door-sign">
                     <span class="neon-text">TICKET SCRATCH</span>
-                    <span class="subtitle">Tentez votre chance!</span>
+                    <span class="subtitle">{{ t('welcome.tagline') }}</span>
                 </div>
             </div>
         </div>
-        <p class="hint" :class="{ hidden: isOpening }">Cliquez pour entrer</p>
+        <p class="hint" :class="{ hidden: isOpening }">{{ t('welcome.hint') }}</p>
     </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
+import { useI18n } from '../i18n.js';
+
+const { t } = useI18n();
 
 const emit = defineEmits(['open']);
 const isOpening = ref(false);

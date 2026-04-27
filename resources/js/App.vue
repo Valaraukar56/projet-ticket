@@ -1,12 +1,15 @@
 <template>
     <div class="game-container">
+        <button class="lang-toggle" @click="toggleLocale">
+            {{ locale === 'fr' ? '🇬🇧 EN' : '🇫🇷 FR' }}
+        </button>
         <!-- Écran d'authentification si non connecté -->
         <AuthForm v-if="!user && !checkingAuth" @authenticated="handleAuth" />
 
         <!-- Chargement initial -->
         <div v-else-if="checkingAuth" class="loading-screen">
             <div class="loader"></div>
-            <p>Chargement...</p>
+            <p>{{ t('app.loading') }}</p>
         </div>
 
         <!-- Jeu si connecté -->
@@ -114,7 +117,7 @@
             <div v-if="isBroke" class="dark-arrow" @click="openOrganMachine">
                 <div class="arrow-glow"></div>
                 <div class="arrow-icon">→</div>
-                <div class="arrow-text">Marché Noir</div>
+                <div class="arrow-text">{{ t('app.blackMarket') }}</div>
             </div>
 
             <!-- Machine à sous Organes -->
@@ -129,7 +132,7 @@
             <div v-if="canAccessCasino" class="casino-arrow" @click="openCasinoTycoon">
                 <div class="casino-arrow-glow"></div>
                 <div class="casino-arrow-icon">←</div>
-                <div class="casino-arrow-text">Casino</div>
+                <div class="casino-arrow-text">{{ t('app.casino') }}</div>
             </div>
 
             <!-- Casino Tycoon -->
@@ -146,15 +149,15 @@
         <div v-if="showDeathScreen" class="death-screen">
             <div class="death-content">
                 <div class="death-skull">💀</div>
-                <h1>COMPTE SUPPRIMÉ</h1>
+                <h1>{{ t('app.accountDeleted') }}</h1>
                 <p class="death-name">{{ deletedUserName }}</p>
-                <p class="death-message">Votre compte a été définitivement supprimé.</p>
-                <p class="death-message">Vous avez joué YOLO... et perdu.</p>
+                <p class="death-message">{{ t('app.permanentlyDeleted') }}</p>
+                <p class="death-message">{{ t('app.yoloLost') }}</p>
                 <div class="death-rip">
                     <span>R.I.P.</span>
                     <span class="death-date">{{ new Date().toLocaleDateString('fr-FR') }}</span>
                 </div>
-                <p class="death-instruction">Fermez cet onglet pour continuer.</p>
+                <p class="death-instruction">{{ t('app.closeTab') }}</p>
                 <div class="death-flames">🔥🔥🔥🔥🔥</div>
             </div>
         </div>
@@ -162,7 +165,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, provide } from 'vue';
+import { useI18n } from './i18n.js';
 import AuthForm from './components/AuthForm.vue';
 import Leaderboard from './components/Leaderboard.vue';
 import AdminPanel from './components/AdminPanel.vue';
@@ -178,6 +182,16 @@ import WindowsError from './components/WindowsError.vue';
 import OrganSlotMachine from './components/OrganSlotMachine.vue';
 import CasinoTycoon from './components/CasinoTycoon.vue';
 import GlobalChat from './components/GlobalChat.vue';
+
+// Langue
+const locale = ref(localStorage.getItem('locale') ?? 'fr');
+const toggleLocale = () => {
+    locale.value = locale.value === 'fr' ? 'en' : 'fr';
+    localStorage.setItem('locale', locale.value);
+};
+provide('locale', locale);
+
+const { t } = useI18n();
 
 // État utilisateur
 const user = ref(null);
@@ -517,6 +531,28 @@ body {
     width: 100vw;
     height: 100vh;
     position: relative;
+}
+
+.lang-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: all 0.2s;
+}
+
+.lang-toggle:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
 }
 
 .loading-screen {

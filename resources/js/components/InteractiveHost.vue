@@ -61,7 +61,7 @@
         <div class="top-right-panel">
             <div class="user-info" v-if="user">
                 <span class="user-name">{{ user.name }}</span>
-                <button class="logout-btn" @click="$emit('logout')">Déconnexion</button>
+                <button class="logout-btn" @click="$emit('logout')">{{ t('host.logout') }}</button>
             </div>
             <div class="balance-display">
                 <span class="balance-icon">$</span>
@@ -71,7 +71,7 @@
 
         <!-- Personnage -->
         <div class="character-wrap" :class="animClass" ref="characterRef">
-            <div class="speech" :class="{ show: showSpeech }">{{ speechText }}</div>
+            <div class="speech" :class="{ show: showSpeech }">{{ speechTextOverride || speechText }}</div>
 
             <svg class="char-svg" @click="onCharacterClick" viewBox="0 0 280 390">
                 <!-- Corps -->
@@ -104,7 +104,7 @@
         <!-- Menu catégories -->
         <div class="menu-overlay" :class="{ open: showMenu || showTickets }" @click="showMenu = false; showTickets = false; selectedCategory = null;"></div>
         <div class="menu" :class="{ open: showMenu }">
-            <div class="menu-title">Choisissez une catégorie</div>
+            <div class="menu-title">{{ t('host.chooseCategory') }}</div>
             <div class="menu-grid">
                 <button
                     v-for="category in categories"
@@ -121,7 +121,7 @@
 
         <!-- Menu tickets de la catégorie -->
         <div class="menu" :class="{ open: showTickets }">
-            <button class="back-btn" @click="backToCategories">← Retour</button>
+            <button class="back-btn" @click="backToCategories">{{ t('host.back') }}</button>
             <div class="menu-title">
                 <span v-if="selectedCategory">{{ selectedCategory.icon }} {{ selectedCategory.name }}</span>
             </div>
@@ -135,8 +135,8 @@
                     @click="selectTicket(ticket)"
                 >
                     <span class="ticket-name">{{ ticket.name }}</span>
-                    <span class="ticket-details">{{ ticket.price }}$ - {{ ticket.lossPercentage }}% risque</span>
-                    <span class="ticket-gains">Gain: {{ ticket.baseGain }}$ | Jackpot: {{ ticket.jackpotGain }}$</span>
+                    <span class="ticket-details">{{ ticket.price }}$ - {{ ticket.lossPercentage }}% {{ t('host.risk') }}</span>
+                    <span class="ticket-gains">{{ t('host.gain') }}: {{ ticket.baseGain }}$ | {{ t('host.jackpot') }}: {{ ticket.jackpotGain }}$</span>
                 </button>
             </div>
         </div>
@@ -166,12 +166,15 @@
             <div class="desk-leg-shadow"></div>
         </div>
 
-        <div class="hint" :class="{ hidden: hintHidden }">Cliquez sur le personnage</div>
+        <div class="hint" :class="{ hidden: hintHidden }">{{ t('host.clickHint') }}</div>
     </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from '../i18n.js';
+
+const { t } = useI18n();
 
 const props = defineProps({
     balance: {
@@ -191,12 +194,12 @@ const props = defineProps({
 const emit = defineEmits(['buy-ticket', 'show-leaderboard', 'show-chat', 'show-admin', 'logout']);
 
 // Catégories de tickets
-const categories = [
-    { id: 'metro', name: 'Ticket Métro', icon: '🚇', color: '#4ade80' },
-    { id: 'bus', name: 'Bus', icon: '🚌', color: '#60a5fa' },
-    { id: 'train', name: 'Train', icon: '🚄', color: '#fbbf24' },
-    { id: 'loterie', name: 'Loterie', icon: '🎰', color: '#a855f7' },
-];
+const categories = computed(() => [
+    { id: 'metro', name: t('host.categories.metro'), icon: '🚇', color: '#4ade80' },
+    { id: 'bus', name: t('host.categories.bus'), icon: '🚌', color: '#60a5fa' },
+    { id: 'train', name: t('host.categories.train'), icon: '🚄', color: '#fbbf24' },
+    { id: 'loterie', name: t('host.categories.loterie'), icon: '🎰', color: '#a855f7' },
+]);
 
 // Thèmes et couleurs par catégorie
 const categoryMeta = {
@@ -262,7 +265,8 @@ const characterRef = ref(null);
 const deskRef = ref(null);
 const animClass = ref('anim-idle');
 const showSpeech = ref(false);
-const speechText = ref('Bonjour !');
+const speechText = computed(() => greeted.value ? t('host.welcome') : t('host.hello'));
+const speechTextOverride = ref('');
 const showMenu = ref(false);
 const showTickets = ref(false);
 const selectedCategory = ref(null);
@@ -298,11 +302,12 @@ const greetThenMenu = () => {
     clearTimeout(animTimer);
     showMenu.value = false;
     animClass.value = 'anim-greet';
-    speechText.value = 'Bienvenue ! Choisissez un ticket !';
+    speechTextOverride.value = t('host.welcome');
     showSpeech.value = true;
 
     animTimer = setTimeout(() => {
         showSpeech.value = false;
+        speechTextOverride.value = '';
         setIdle();
         showMenu.value = true;
     }, 1900);

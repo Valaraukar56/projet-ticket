@@ -3,22 +3,22 @@
         <div class="auth-modal">
             <div class="auth-header">
                 <span class="auth-icon">🎰</span>
-                <h2>{{ isLogin ? 'Connexion' : 'Inscription' }}</h2>
+                <h2>{{ isLogin ? t('auth.login') : t('auth.register') }}</h2>
             </div>
 
             <form @submit.prevent="submit">
                 <div v-if="!isLogin" class="form-group">
-                    <label>Pseudo</label>
+                    <label>{{ t('auth.username') }}</label>
                     <input
                         v-model="form.name"
                         type="text"
-                        placeholder="Votre pseudo"
+                        :placeholder="t('auth.usernamePlaceholder')"
                         required
                     />
                 </div>
 
                 <div class="form-group">
-                    <label>Email</label>
+                    <label>{{ t('auth.email') }}</label>
                     <input
                         v-model="form.email"
                         type="email"
@@ -28,7 +28,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Mot de passe</label>
+                    <label>{{ t('auth.password') }}</label>
                     <input
                         v-model="form.password"
                         type="password"
@@ -40,20 +40,20 @@
                 <p v-if="error" class="error">{{ error }}</p>
 
                 <button type="submit" class="submit-btn" :disabled="loading">
-                    {{ loading ? 'Chargement...' : (isLogin ? 'Se connecter' : "S'inscrire") }}
+                    {{ loading ? t('auth.loading') : (isLogin ? t('auth.loginBtn') : t('auth.registerBtn')) }}
                 </button>
             </form>
 
             <p class="switch-mode">
-                {{ isLogin ? 'Pas encore de compte ?' : 'Déjà un compte ?' }}
+                {{ isLogin ? t('auth.noAccount') : t('auth.alreadyAccount') }}
                 <a href="#" @click.prevent="switchMode">
-                    {{ isLogin ? "S'inscrire" : 'Se connecter' }}
+                    {{ isLogin ? t('auth.switchToRegister') : t('auth.switchToLogin') }}
                 </a>
             </p>
 
             <div class="bonus-info">
                 <span class="bonus-icon">🎁</span>
-                <span>100$ offerts à l'inscription !</span>
+                <span>{{ t('auth.bonus') }}</span>
             </div>
         </div>
     </div>
@@ -61,6 +61,9 @@
 
 <script setup>
 import { ref, reactive } from 'vue';
+import { useI18n } from '../i18n.js';
+
+const { t } = useI18n();
 
 const emit = defineEmits(['authenticated']);
 
@@ -109,14 +112,14 @@ const submit = async () => {
                 const firstError = Object.values(data.errors)[0];
                 error.value = Array.isArray(firstError) ? firstError[0] : firstError;
             } else {
-                error.value = data.message || 'Une erreur est survenue';
+                error.value = data.message || t('auth.errorOccurred');
             }
             return;
         }
 
         emit('authenticated', data.user);
     } catch (e) {
-        error.value = 'Erreur de connexion au serveur';
+        error.value = t('auth.serverError');
     } finally {
         loading.value = false;
     }

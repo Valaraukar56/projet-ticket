@@ -2,7 +2,7 @@
     <div class="chat-overlay" @click.self="$emit('close')">
         <div class="chat-container">
             <div class="chat-header">
-                <h2>Chat Global</h2>
+                <h2>{{ t('chat.title') }}</h2>
                 <button class="close-btn" @click="$emit('close')">✕</button>
             </div>
 
@@ -18,7 +18,7 @@
                     <span class="msg-text">{{ msg.message }}</span>
                 </div>
                 <div v-if="messages.length === 0" class="no-messages">
-                    Aucun message. Soyez le premier !
+                    {{ t('chat.noMessages') }}
                 </div>
             </div>
 
@@ -28,12 +28,12 @@
                 <input
                     type="text"
                     v-model="newMessage"
-                    placeholder="Votre message..."
+                    :placeholder="t('chat.placeholder')"
                     maxlength="500"
                     :disabled="sending"
                 />
                 <button type="submit" :disabled="!newMessage.trim() || sending">
-                    Envoyer
+                    {{ t('chat.send') }}
                 </button>
             </form>
         </div>
@@ -42,6 +42,9 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { useI18n } from '../i18n.js';
+
+const { t } = useI18n();
 
 const props = defineProps({
     currentUsername: {

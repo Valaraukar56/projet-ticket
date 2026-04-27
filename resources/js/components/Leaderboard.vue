@@ -5,12 +5,12 @@
 
             <div class="leaderboard-header">
                 <span class="trophy-icon">🏆</span>
-                <h2>Classement</h2>
+                <h2>{{ t('leaderboard.title') }}</h2>
             </div>
 
             <div v-if="loading" class="loading">
                 <span class="spinner"></span>
-                Chargement...
+                {{ t('leaderboard.loading') }}
             </div>
 
             <div v-else class="leaderboard-list">
@@ -36,12 +36,12 @@
                 </div>
 
                 <div v-if="players.length === 0" class="no-players">
-                    Aucun joueur pour le moment
+                    {{ t('leaderboard.noPlayers') }}
                 </div>
             </div>
 
             <button class="refresh-btn" @click="fetchLeaderboard" :disabled="loading">
-                🔄 Actualiser
+                {{ t('leaderboard.refresh') }}
             </button>
         </div>
     </div>
@@ -49,6 +49,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useI18n } from '../i18n.js';
+
+const { t } = useI18n();
 
 const props = defineProps({
     currentUserId: {
