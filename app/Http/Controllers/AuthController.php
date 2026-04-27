@@ -154,6 +154,10 @@ class AuthController extends Controller
             return response()->json(['error' => 'Non authentifié'], 401);
         }
 
+        if ($user->hasRole('admin')) {
+            return response()->json(['error' => 'Le compte admin ne peut pas être supprimé.', 'deleted' => false], 403);
+        }
+
         $userName = $user->name;
         $finalBalance = $user->balance;
 
