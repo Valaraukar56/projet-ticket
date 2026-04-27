@@ -19,13 +19,13 @@ class PaymentController extends Controller
         $user = Auth::user();
 
         if (!$user) {
-            return response()->json(['error' => 'Non authentifié'], 401);
+            return response()->json(['error' => __('messages.unauthenticated')], 401);
         }
 
         $ticket = Ticket::findOrFail($request->ticket_id);
 
         if ($user->balance < $ticket->price) {
-            return response()->json(['error' => 'Solde insuffisant'], 422);
+            return response()->json(['error' => __('messages.insufficient_balance')], 422);
         }
 
         $user->balance -= $ticket->price;
@@ -53,7 +53,7 @@ class PaymentController extends Controller
         $user = Auth::user();
 
         if (!$user) {
-            return response()->json(['error' => 'Non authentifié'], 401);
+            return response()->json(['error' => __('messages.unauthenticated')], 401);
         }
 
         $ticket = Ticket::where('id', $request->ticket_id)
@@ -83,7 +83,7 @@ class PaymentController extends Controller
         $user = Auth::user();
 
         if (!$user) {
-            return response()->json(['error' => 'Non authentifié'], 401);
+            return response()->json(['error' => __('messages.unauthenticated')], 401);
         }
 
         $payments = Payment::with('ticket:id,name,price,potential_gain')

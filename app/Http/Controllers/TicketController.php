@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use App\Models\User;
+use App\Rules\NoProfanity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +14,7 @@ class TicketController extends Controller
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'name'             => 'required|string',
+            'name'             => ['required', 'string', new NoProfanity()],
             'price'            => 'required|integer|min:0',
             'loss_percentage'  => 'required|integer|min:0|max:100',
             'potential_gain'   => 'required|integer|min:0',

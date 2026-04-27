@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ChatMessage;
+use App\Rules\NoProfanity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -45,11 +46,11 @@ class ChatController extends Controller
         $user = Auth::user();
 
         if (!$user) {
-            return response()->json(['error' => 'Non authentifié'], 401);
+            return response()->json(['error' => __('messages.unauthenticated')], 401);
         }
 
         $validated = $request->validate([
-            'message' => 'required|string|max:500',
+            'message' => ['required', 'string', 'max:500', new NoProfanity()],
         ]);
 
         $message = ChatMessage::create([
