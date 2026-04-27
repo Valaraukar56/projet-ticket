@@ -21,13 +21,10 @@ Ajout de nouvelles fonctionnalités ou amélioration de l'existant.
 ### 2. Corriger
 
 ```bash
-# Créer une branche de correction
-git checkout -b fix/nom-du-bug
-
-# Appliquer la correction, puis committer
+# Appliquer la correction, puis committer sur main
 git add .
 git commit -m "fix: description du correctif"
-git push origin fix/nom-du-bug
+git push origin main
 ```
 
 ### 3. Vérifier
@@ -50,7 +47,6 @@ Voir la section [Déploiement](#déploiement) ci-dessous.
 ### 1. Planifier
 
 - Définir la fonctionnalité et ses impacts (BDD, API, frontend)
-- Créer une branche dédiée : `git checkout -b feature/nom-feature`
 
 ### 2. Développer
 
@@ -73,11 +69,11 @@ npm run build
 php artisan test
 ```
 
-### 4. Merger et déployer
+### 4. Déployer
 
 ```bash
-git checkout main
-git merge feature/nom-feature
+git add .
+git commit -m "feat: description de la fonctionnalité"
 git push origin main
 ```
 
