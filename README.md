@@ -140,6 +140,7 @@ projet-ticket/
 │   │   ├── AuthController.php          # Authentification + suppression compte
 │   │   ├── AdminController.php         # Panel admin (stats, users, settings)
 │   │   ├── TicketController.php        # API tickets (CRUD + suivi)
+│   │   ├── PaymentController.php       # Achat tickets + gains + historique
 │   │   ├── CasinoController.php        # Casino Tycoon
 │   │   ├── ChatController.php          # Chat
 │   │   └── LeaderboardController.php   # Classement
@@ -217,6 +218,14 @@ npm run build
 | POST | /api/casino/unlock | Débloquer le Casino |
 | GET | /api/chat | Messages du chat |
 | POST | /api/chat | Envoyer un message |
+
+### Paiements
+
+| Méthode | Route | Description |
+|---------|-------|-------------|
+| POST | /api/payments/purchase | Acheter un ticket (débite le solde, trace le paiement) |
+| POST | /api/payments/win | Encaisser un gain (crédite le solde, trace le paiement) |
+| GET | /api/payments | Historique des paiements de l'utilisateur connecté |
 
 ### Tickets (API Avancée)
 
