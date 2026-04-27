@@ -22,6 +22,8 @@
                 </div>
             </div>
 
+            <div v-if="sendError" class="send-error">{{ sendError }}</div>
+
             <form class="chat-input" @submit.prevent="sendMessage">
                 <input
                     type="text"
@@ -53,6 +55,7 @@ defineEmits(['close']);
 const messages = ref([]);
 const newMessage = ref('');
 const sending = ref(false);
+const sendError = ref('');
 const messagesContainer = ref(null);
 let pollInterval = null;
 let lastMessageId = 0;
@@ -95,6 +98,7 @@ const sendMessage = async () => {
     if (!newMessage.value.trim() || sending.value) return;
 
     sending.value = true;
+    sendError.value = '';
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
@@ -106,15 +110,24 @@ const sendMessage = async () => {
             body: JSON.stringify({ message: newMessage.value }),
         });
 
+        const data = await response.json();
+
         if (response.ok) {
-            const data = await response.json();
             messages.value.push(data.message);
             lastMessageId = data.message.id;
             newMessage.value = '';
             scrollToBottom();
+        } else if (response.status === 401) {
+            sendError.value = 'You must be logged in to send messages.';
+        } else if (response.status === 422 && data.errors) {
+            const firstError = Object.values(data.errors)[0];
+            sendError.value = Array.isArray(firstError) ? firstError[0] : firstError;
+        } else {
+            sendError.value = data.error ?? 'Failed to send message.';
         }
     } catch (e) {
         console.error('Erreur envoi message:', e);
+        sendError.value = 'Network error. Please try again.';
     } finally {
         sending.value = false;
     }
@@ -257,6 +270,15 @@ onUnmounted(() => {
     color: #666;
     font-style: italic;
     margin-top: 20px;
+}
+
+.send-error {
+    padding: 8px 15px;
+    background: rgba(255, 80, 80, 0.15);
+    border-top: 1px solid rgba(255, 80, 80, 0.4);
+    color: #ff6b6b;
+    font-size: 0.85rem;
+    text-align: center;
 }
 
 .chat-input {
