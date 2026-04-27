@@ -383,16 +383,23 @@ const handleResult = async (result) => {
         deletedUserName.value = user.value?.name || 'Joueur';
 
         // Supprimer le compte IMMÉDIATEMENT (avant l'animation)
+        let deleted = false;
         try {
-            await fetch('/api/account', {
+            const res = await fetch('/api/account', {
                 method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': getCSRFToken(),
-                },
+                headers: { 'X-CSRF-TOKEN': getCSRFToken() },
                 credentials: 'same-origin',
             });
+            const data = await res.json();
+            deleted = data.deleted === true;
         } catch (e) {
             console.error('Erreur suppression compte:', e);
+        }
+
+        if (!deleted) {
+            // Compte protégé (admin) — on ferme juste le ticket sans chaos
+            currentTicket.value = null;
+            return;
         }
 
         // Ensuite montrer l'animation

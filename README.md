@@ -1,16 +1,19 @@
 # Projet Ticket - Jeu de Grattage
 
-Jeu de tickets à gratter style FDJ développé avec Laravel + Vue.js pour un projet BTS.
+Jeu de tickets à gratter style FDJ développé avec Laravel + Vue.js pour un projet BTS SIO.
 
 ## Fonctionnalités
 
-- Tickets à gratter (Métro, Bus, Train, Loterie) avec différents thèmes FDJ
+- Tickets à gratter (Métro, Bus, Train, Loterie) avec différents thèmes visuels
 - Système d'authentification avec rôles (admin/joueur)
 - Solde persistant en base de données
-- Classement des joueurs
-- Panel d'administration avec statistiques
+- Classement des joueurs (top 50)
+- Casino Tycoon débloquable à 5000$
+- Chat en temps réel
 - "Marché Noir des Organes" - machine à sous spéciale quand le solde atteint 0$
+- Panel d'administration (stats, gestion utilisateurs, suivi tickets)
 - Logging des actions avec MongoDB (optionnel)
+- Compte admin protégé contre la suppression YOLO
 
 ---
 
@@ -58,33 +61,13 @@ touch database/database.sqlite
 # DB_CONNECTION=sqlite
 # DB_DATABASE=/chemin/absolu/vers/database/database.sqlite
 
-# 9. Lancer les migrations
-php artisan migrate
+# 9. Lancer les migrations et les seeders
+php artisan migrate --seed
 
-# 10. Créer les rôles
-php artisan db:seed --class=RoleSeeder
-
-# 11. Créer le compte admin
-php artisan tinker
-```
-
-Dans tinker, exécuter :
-```php
-$user = \App\Models\User::create([
-    'name' => 'Admin',
-    'email' => 'admin@admin.com',
-    'password' => bcrypt('password'),
-    'balance' => 1000
-]);
-$user->assignRole('admin');
-exit
-```
-
-```bash
-# 12. Builder le frontend
+# 10. Builder le frontend
 npm run build
 
-# 13. Lancer le serveur
+# 11. Lancer le serveur
 php artisan serve --host=0.0.0.0 --port=8000
 ```
 
@@ -154,30 +137,42 @@ Les nouveaux utilisateurs peuvent s'inscrire via le formulaire d'inscription.
 projet-ticket/
 ├── app/
 │   ├── Http/Controllers/
-│   │   ├── AuthController.php      # Authentification
-│   │   ├── AdminController.php     # Panel admin
-│   │   └── LeaderboardController.php
+│   │   ├── AuthController.php          # Authentification + suppression compte
+│   │   ├── AdminController.php         # Panel admin (stats, users, settings)
+│   │   ├── TicketController.php        # API tickets (CRUD + suivi)
+│   │   ├── PaymentController.php       # Achat tickets + gains + historique
+│   │   ├── CasinoController.php        # Casino Tycoon
+│   │   ├── ChatController.php          # Chat
+│   │   └── LeaderboardController.php   # Classement
 │   ├── Models/
 │   │   ├── User.php
-│   │   └── GameLog.php             # Logs MongoDB
+│   │   ├── Ticket.php
+│   │   ├── Payment.php
+│   │   ├── CasinoData.php
+│   │   ├── ChatMessage.php
+│   │   └── GameLog.php                 # Logs MongoDB
 │   └── Services/
 │       └── GameLogService.php
 ├── resources/js/
-│   ├── App.vue                     # Composant principal
+│   ├── App.vue                         # Composant principal
 │   └── components/
-│       ├── AuthForm.vue            # Connexion/Inscription
-│       ├── InteractiveHost.vue     # Interface principale
-│       ├── MetroTicket.vue         # Ticket style Astro
-│       ├── CashTicket.vue          # Ticket style Cash
-│       ├── MillionaireTicket.vue   # Ticket style Millionnaire
-│       ├── ScratchTicket.vue       # Ticket générique
-│       ├── OrganSlotMachine.vue    # Marché Noir
-│       ├── AdminPanel.vue          # Panel admin
-│       └── Leaderboard.vue         # Classement
+│       ├── AuthForm.vue                # Connexion/Inscription
+│       ├── InteractiveHost.vue         # Interface principale
+│       ├── MetroTicket.vue             # Ticket style Astro
+│       ├── CashTicket.vue              # Ticket style Cash
+│       ├── MillionaireTicket.vue       # Ticket style Millionnaire
+│       ├── RouletteTicket.vue          # Ticket style Roulette
+│       ├── ScratchTicket.vue           # Ticket générique
+│       ├── OrganSlotMachine.vue        # Marché Noir des Organes
+│       ├── AdminPanel.vue              # Panel admin
+│       ├── CasinoTycoon.vue            # Casino Tycoon
+│       ├── GlobalChat.vue              # Chat
+│       └── Leaderboard.vue             # Classement
 ├── database/
 │   ├── migrations/
 │   └── seeders/
-│       └── RoleSeeder.php
+│       ├── RoleSeeder.php
+│       └── AdminSeeder.php
 ├── docker-compose.yml
 ├── Dockerfile
 └── docker-entrypoint.sh
@@ -202,6 +197,8 @@ npm run build
 
 ## API Routes
 
+### Authentification
+
 | Méthode | Route | Description |
 |---------|-------|-------------|
 | POST | /api/register | Inscription |
@@ -209,10 +206,47 @@ npm run build
 | POST | /api/logout | Déconnexion |
 | GET | /api/me | Utilisateur connecté |
 | POST | /api/balance | Mettre à jour le solde |
+| DELETE | /api/account | Supprimer son compte (YOLO chaos) |
+
+### Jeu
+
+| Méthode | Route | Description |
+|---------|-------|-------------|
 | GET | /api/leaderboard | Top 50 joueurs |
-| GET | /api/admin/users | Liste utilisateurs (admin) |
-| GET | /api/admin/stats | Statistiques (admin) |
-| DELETE | /api/admin/users/{id} | Supprimer utilisateur (admin) |
+| GET | /api/casino | Données Casino Tycoon |
+| POST | /api/casino | Sauvegarder Casino Tycoon |
+| POST | /api/casino/unlock | Débloquer le Casino |
+| GET | /api/chat | Messages du chat |
+| POST | /api/chat | Envoyer un message |
+
+### Paiements
+
+| Méthode | Route | Description |
+|---------|-------|-------------|
+| POST | /api/payments/purchase | Acheter un ticket (débite le solde, trace le paiement) |
+| POST | /api/payments/win | Encaisser un gain (crédite le solde, trace le paiement) |
+| GET | /api/payments | Historique des paiements de l'utilisateur connecté |
+
+### Tickets (API Avancée)
+
+| Méthode | Route | Description |
+|---------|-------|-------------|
+| POST | /api/tickets | Créer un ticket à l'achat |
+| PATCH | /api/tickets/{id}/complete | Clore un ticket avec son résultat |
+| GET | /api/open-tickets | Tickets en cours (purchased/scratching) |
+| GET | /api/closed-tickets | Tickets terminés (completed) |
+| GET | /api/users/{email}/tickets | Tickets d'un utilisateur par email |
+
+### Administration
+
+| Méthode | Route | Description |
+|---------|-------|-------------|
+| GET | /api/admin/stats | Statistiques globales |
+| GET | /api/admin/users | Liste des utilisateurs |
+| PUT | /api/admin/users/{id}/balance | Modifier le solde d'un utilisateur |
+| DELETE | /api/admin/users/{id} | Supprimer un utilisateur |
+| GET | /api/admin/tickets | Paramètres des tickets/slots |
+| PUT | /api/admin/tickets | Modifier les paramètres |
 
 ---
 
@@ -221,8 +255,8 @@ npm run build
 - **Backend:** Laravel 11, PHP 8.2+
 - **Frontend:** Vue.js 3, Vite
 - **Base de données:** SQLite (local) / MySQL (Docker)
+- **Permissions:** Spatie Laravel Permission
 - **Logs:** MongoDB (optionnel, Docker)
-- **Auth:** Laravel Session + Spatie Permission
 
 ---
 

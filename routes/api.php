@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CasinoController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +19,11 @@ Route::delete('/account', [AuthController::class, 'deleteAccount']);
 
 // Classement
 Route::get('/leaderboard', [LeaderboardController::class, 'index']);
+
+// Paiements
+Route::post('/payments/purchase', [PaymentController::class, 'purchase']);
+Route::post('/payments/win', [PaymentController::class, 'win']);
+Route::get('/payments', [PaymentController::class, 'history']);
 
 // Tickets API avancée
 Route::post('/tickets', [TicketController::class, 'store']);

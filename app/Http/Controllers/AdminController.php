@@ -17,7 +17,7 @@ class AdminController extends Controller
     {
         $user = Auth::user();
         if (!$user || !$user->hasRole('admin')) {
-            abort(403, 'Accès refusé');
+            abort(403, __('messages.access_denied'));
         }
     }
 
@@ -89,7 +89,7 @@ class AdminController extends Controller
         $user->save();
 
         return response()->json([
-            'message' => 'Solde mis à jour',
+            'message' => __('messages.balance_updated'),
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -109,14 +109,14 @@ class AdminController extends Controller
 
         // Empêcher la suppression d'un admin
         if ($user->hasRole('admin')) {
-            return response()->json(['error' => 'Impossible de supprimer un admin'], 403);
+            return response()->json(['error' => __('messages.cannot_delete_admin')], 403);
         }
 
         $userName = $user->name;
         $user->delete();
 
         return response()->json([
-            'message' => "Utilisateur {$userName} supprimé",
+            'message' => __('messages.user_deleted', ['name' => $userName]),
         ]);
     }
 
@@ -203,7 +203,7 @@ class AdminController extends Controller
         }
 
         return response()->json([
-            'message' => 'Paramètres sauvegardés',
+            'message' => __('messages.settings_saved'),
         ]);
     }
 }

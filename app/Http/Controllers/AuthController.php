@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Rules\NoProfanity;
 use App\Services\GameLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,8 +18,8 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
+            'name'     => ['required', 'string', 'max:255', new NoProfanity()],
+            'email'    => 'required|email|unique:users',
             'password' => 'required|min:6',
         ]);
 
@@ -61,7 +62,7 @@ class AuthController extends Controller
 
         if (!Auth::attempt($request->only('email', 'password'))) {
             throw ValidationException::withMessages([
-                'email' => ['Email ou mot de passe incorrect.'],
+                'email' => [__('messages.invalid_credentials')],
             ]);
         }
 
@@ -94,7 +95,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return response()->json(['message' => 'Déconnecté']);
+        return response()->json(['message' => __('messages.logged_out')]);
     }
 
     /**
@@ -128,7 +129,7 @@ class AuthController extends Controller
         $user = Auth::user();
 
         if (!$user) {
-            return response()->json(['error' => 'Non authentifié'], 401);
+            return response()->json(['error' => __('messages.unauthenticated')], 401);
         }
 
         $request->validate([
@@ -151,7 +152,11 @@ class AuthController extends Controller
         $user = Auth::user();
 
         if (!$user) {
-            return response()->json(['error' => 'Non authentifié'], 401);
+            return response()->json(['error' => __('messages.unauthenticated')], 401);
+        }
+
+        if ($user->hasRole('admin')) {
+            return response()->json(['error' => __('messages.admin_cannot_be_deleted'), 'deleted' => false], 403);
         }
 
         $userName = $user->name;
@@ -169,7 +174,7 @@ class AuthController extends Controller
         $user->delete();
 
         return response()->json([
-            'message' => "Le compte de {$userName} a été supprimé. YOLO!",
+            'message' => __('messages.account_deleted', ['name' => $userName]),
             'deleted' => true,
         ]);
     }
